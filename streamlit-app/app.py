@@ -83,7 +83,7 @@ def render_header():
 def render_sidebar():
     """Render sidebar with information and actions."""
     with st.sidebar:
-        st.image("https://via.placeholder.com/300x100/FF6B35/FFFFFF?text=Email-to-SMS", use_container_width=True)
+        st.image("https://via.placeholder.com/300x100/FF6B35/FFFFFF?text=Email-to-SMS", use_column_width=True)
 
         st.markdown("## 🎯 Quick Guide")
 
@@ -155,7 +155,6 @@ def main():
         generate_button = st.button(
             "🚀 Generate Code",
             type="primary",
-            use_container_width=True,
             help="Generate all Worker files based on your configuration"
         )
 

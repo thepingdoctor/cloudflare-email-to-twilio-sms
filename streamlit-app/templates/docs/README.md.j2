@@ -55,13 +55,13 @@ wrangler kv:namespace create "RATE_LIMIT_KV"
 ```
 
 {% endif %}
-### {{ (rate_limit.enabled and rate_limit.storage == 'kv') | ternary('4', '3') }}. Deploy
+### {{ '4' if (rate_limit.enabled and rate_limit.storage == 'kv') else '3' }}. Deploy
 
 ```bash
 npm run deploy
 ```
 
-### {{ (rate_limit.enabled and rate_limit.storage == 'kv') | ternary('5', '4') }}. Configure Email Routing
+### {{ '5' if (rate_limit.enabled and rate_limit.storage == 'kv') else '4' }}. Configure Email Routing
 
 1. Go to [Cloudflare Dashboard](https://dash.cloudflare.com/)
 2. Navigate to Email → Email Routing
