@@ -1,0 +1,329 @@
+/**
+ * Cloudflare Email Worker - Email to SMS Gateway
+ *
+ * This worker processes incoming emails via Cloudflare Email Routing
+ * and forwards them as SMS messages using Twilio.
+ *
+ * @see https://developers.cloudflare.com/email-routing/
+ */
+
+import { EmailMessage } from 'cloudflare:email';
+import { createMimeMessage } from 'mimetext';
+
+interface Env {
+  // Twilio Configuration
+  TWILIO_ACCOUNT_SID: string;
+  TWILIO_AUTH_TOKEN: string;
+  TWILIO_PHONE_NUMBER: string;
+
+{% if rate_limit.enabled %}
+  // Rate Limiting KV Namespace
+  RATE_LIMIT_KV: KVNamespace;
+{% endif %}
+
+{% if logging.enabled and logging.storage_type == "analytics_engine" %}
+  // Analytics Engine Binding
+  EMAIL_SMS_ANALYTICS: AnalyticsEngineDataset;
+{% endif %}
+}
+
+interface EmailHeaders {
+  from: string;
+  to: string;
+  subject?: string;
+  'message-id'?: string;
+}
+
+/**
+ * Extract phone number from email address
+ * Supports formats: 15551234567@{{ basic.domain }}, +15551234567@{{ basic.domain }}
+ */
+function extractPhoneNumber(emailAddress: string): string | null {
+  // Extract local part before @
+  const match = emailAddress.match(/^([^@]+)@/);
+  if (!match) return null;
+
+  let phoneNumber = match[1];
+
+  // Remove common formatting characters
+  phoneNumber = phoneNumber.replace(/[\s\-\(\)\.]/g, '');
+
+  // Add country code if missing
+  if (!phoneNumber.startsWith('+')) {
+    phoneNumber = '{{ routing.default_country_code }}' + phoneNumber;
+  }
+
+  // Validate E.164 format (simplified)
+  if (!/^\+[1-9]\d{1,14}$/.test(phoneNumber)) {
+    return null;
+  }
+
+  return phoneNumber;
+}
+
+/**
+ * Parse email content from raw message
+ */
+async function parseEmailContent(message: EmailMessage): Promise<string> {
+  const rawEmail = await new Response(message.raw).text();
+
+{% if routing.strip_html %}
+  // Simple HTML stripping (basic implementation)
+  const textContent = rawEmail
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+{% else %}
+  const textContent = rawEmail;
+{% endif %}
+
+  // Truncate to SMS limits
+  const maxLength = {{ routing.max_message_length }};
+  return textContent.substring(0, maxLength);
+}
+
+{% if rate_limit.enabled %}
+/**
+ * Check rate limits for sender/recipient
+ */
+async function checkRateLimit(
+  env: Env,
+  from: string,
+  to: string
+): Promise<{ allowed: boolean; reason?: string }> {
+  const now = Date.now();
+  const windowMs = 60 * 60 * 1000; // 1 hour window
+
+  // Check sender rate limit
+  const senderKey = `rate:sender:${from}`;
+  const senderCount = await env.RATE_LIMIT_KV.get(senderKey);
+  const senderCountNum = senderCount ? parseInt(senderCount) : 0;
+
+  if (senderCountNum >= {{ rate_limit.per_sender }}) {
+    return { allowed: false, reason: 'Sender rate limit exceeded' };
+  }
+
+  // Check recipient rate limit
+  const recipientKey = `rate:recipient:${to}`;
+  const recipientCount = await env.RATE_LIMIT_KV.get(recipientKey);
+  const recipientCountNum = recipientCount ? parseInt(recipientCount) : 0;
+
+  if (recipientCountNum >= {{ rate_limit.per_recipient }}) {
+    return { allowed: false, reason: 'Recipient rate limit exceeded' };
+  }
+
+  // Update counters
+  await env.RATE_LIMIT_KV.put(senderKey, String(senderCountNum + 1), {
+    expirationTtl: Math.floor(windowMs / 1000)
+  });
+  await env.RATE_LIMIT_KV.put(recipientKey, String(recipientCountNum + 1), {
+    expirationTtl: Math.floor(windowMs / 1000)
+  });
+
+  return { allowed: true };
+}
+{% endif %}
+
+/**
+ * Send SMS via Twilio API
+ */
+async function sendSMS(
+  env: Env,
+  to: string,
+  message: string,
+{% if routing.include_sender_info %}
+  from: string
+{% endif %}
+): Promise<{ success: boolean; error?: string; messageSid?: string }> {
+  const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${env.TWILIO_ACCOUNT_SID}/Messages.json`;
+
+{% if routing.include_sender_info %}
+  const body = `From: ${from}\n\n${message}`;
+{% else %}
+  const body = message;
+{% endif %}
+
+  const params = new URLSearchParams({
+    To: to,
+    From: env.TWILIO_PHONE_NUMBER,
+    Body: body
+  });
+
+  const credentials = btoa(`${env.TWILIO_ACCOUNT_SID}:${env.TWILIO_AUTH_TOKEN}`);
+
+{% if retry.enabled %}
+  let lastError: string | undefined;
+
+  for (let attempt = 0; attempt <= {{ retry.max_retries }}; attempt++) {
+    try {
+{% endif %}
+      const response = await fetch(twilioUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Basic ${credentials}`,
+          'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: params.toString()
+      });
+
+      if (!response.ok) {
+        const error = await response.text();
+{% if retry.enabled %}
+        lastError = `Twilio API error: ${error}`;
+
+        // Don't retry on client errors (4xx)
+        if (response.status >= 400 && response.status < 500) {
+          return { success: false, error: lastError };
+        }
+
+        // Retry on server errors (5xx) or network issues
+        if (attempt < {{ retry.max_retries }}) {
+{% if retry.backoff_strategy == "exponential" %}
+          const delay = {{ retry.retry_delay }} * Math.pow(2, attempt) * 1000;
+{% else %}
+          const delay = {{ retry.retry_delay }} * 1000;
+{% endif %}
+          await new Promise(resolve => setTimeout(resolve, delay));
+          continue;
+        }
+{% else %}
+        return { success: false, error: `Twilio API error: ${error}` };
+{% endif %}
+      }
+
+      const result = await response.json();
+      return { success: true, messageSid: result.sid };
+{% if retry.enabled %}
+    } catch (error) {
+      lastError = error instanceof Error ? error.message : 'Unknown error';
+
+      if (attempt < {{ retry.max_retries }}) {
+{% if retry.backoff_strategy == "exponential" %}
+        const delay = {{ retry.retry_delay }} * Math.pow(2, attempt) * 1000;
+{% else %}
+        const delay = {{ retry.retry_delay }} * 1000;
+{% endif %}
+        await new Promise(resolve => setTimeout(resolve, delay));
+        continue;
+      }
+    }
+  }
+
+  return { success: false, error: lastError };
+{% endif %}
+}
+
+{% if logging.enabled and logging.storage_type == "analytics_engine" %}
+/**
+ * Log event to Analytics Engine
+ */
+function logEvent(
+  env: Env,
+  eventType: string,
+  data: Record<string, any>
+): void {
+  env.EMAIL_SMS_ANALYTICS.writeDataPoint({
+    indexes: [eventType],
+    blobs: [
+      data.from || '',
+      data.to || '',
+      data.error || ''
+    ],
+    doubles: [
+      Date.now()
+    ]
+  });
+}
+{% endif %}
+
+/**
+ * Main email handler
+ */
+export default {
+  async email(message: EmailMessage, env: Env, ctx: ExecutionContext): Promise<void> {
+    try {
+      // Extract email headers
+      const from = message.from;
+      const to = message.to;
+{% if routing.email_subject_in_message %}
+      const subject = message.headers.get('subject') || '';
+{% endif %}
+
+{% if logging.enabled %}
+      console.log(`Processing email from ${from} to ${to}`);
+{% endif %}
+
+      // Extract phone number from recipient email
+      const phoneNumber = extractPhoneNumber(to);
+      if (!phoneNumber) {
+{% if logging.enabled and logging.storage_type == "analytics_engine" %}
+        logEvent(env, 'invalid_phone', { from, to, error: 'Invalid phone number format' });
+{% endif %}
+        message.setReject(`Invalid phone number format in recipient address: ${to}`);
+        return;
+      }
+
+{% if security.enable_sender_whitelist %}
+      // Check sender whitelist
+      const allowedSenders = {{ security.sender_whitelist | tojson }};
+      if (!allowedSenders.includes(from)) {
+{% if logging.enabled and logging.storage_type == "analytics_engine" %}
+        logEvent(env, 'sender_blocked', { from, to: phoneNumber });
+{% endif %}
+        message.setReject(`Sender ${from} not in whitelist`);
+        return;
+      }
+{% endif %}
+
+{% if rate_limit.enabled %}
+      // Check rate limits
+      const rateLimitResult = await checkRateLimit(env, from, phoneNumber);
+      if (!rateLimitResult.allowed) {
+{% if logging.enabled and logging.storage_type == "analytics_engine" %}
+        logEvent(env, 'rate_limited', { from, to: phoneNumber, error: rateLimitResult.reason });
+{% endif %}
+        message.setReject(rateLimitResult.reason || 'Rate limit exceeded');
+        return;
+      }
+{% endif %}
+
+      // Parse email content
+      let messageContent = await parseEmailContent(message);
+
+{% if routing.email_subject_in_message %}
+      if (subject) {
+        messageContent = `${subject}\n\n${messageContent}`;
+      }
+{% endif %}
+
+      // Send SMS
+      const smsResult = await sendSMS(env, phoneNumber, messageContent{% if routing.include_sender_info %}, from{% endif %});
+
+      if (smsResult.success) {
+{% if logging.enabled and logging.storage_type == "analytics_engine" %}
+        logEvent(env, 'sms_sent', { from, to: phoneNumber, messageSid: smsResult.messageSid });
+{% endif %}
+{% if logging.enabled %}
+        console.log(`SMS sent successfully to ${phoneNumber}, SID: ${smsResult.messageSid}`);
+{% endif %}
+      } else {
+{% if logging.enabled and logging.storage_type == "analytics_engine" %}
+        logEvent(env, 'sms_failed', { from, to: phoneNumber, error: smsResult.error });
+{% endif %}
+        console.error(`Failed to send SMS: ${smsResult.error}`);
+        message.setReject(`Failed to send SMS: ${smsResult.error}`);
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.error('Email processing error:', errorMessage);
+{% if logging.enabled and logging.storage_type == "analytics_engine" %}
+      logEvent(env, 'processing_error', {
+        from: message.from,
+        to: message.to,
+        error: errorMessage
+      });
+{% endif %}
+      message.setReject(`Processing error: ${errorMessage}`);
+    }
+  }
+};

@@ -98,6 +98,8 @@ def get_language_name(filename: str) -> str:
     """
     if filename.endswith('.ts'):
         return 'typescript'
+    elif filename.endswith('.js'):
+        return 'javascript'
     elif filename.endswith('.toml'):
         return 'toml'
     elif filename.endswith('.json'):
@@ -106,6 +108,8 @@ def get_language_name(filename: str) -> str:
         return 'markdown'
     elif filename.endswith('.sh'):
         return 'bash'
+    elif filename.endswith('.yml') or filename.endswith('.yaml'):
+        return 'yaml'
     else:
         return 'text'
 
@@ -136,20 +140,37 @@ def get_mime_type(filename: str) -> str:
         return 'text/plain'
 
 
-def render_code_tabs(files: Dict[str, str]):
+def render_code_tabs(files: Dict[str, str], worker_type: str = "standard"):
     """
-    Render multiple code tabs.
+    Render multiple code tabs with worker type awareness.
 
     Args:
         files: Dictionary mapping filenames to content
+        worker_type: Type of worker ("standard" or "email")
     """
     if not files:
         st.warning("⚠️ No files generated yet. Please fill in the configuration and click 'Generate Code'.")
         return
 
-    # Create tabs
+    # Create tabs with appropriate icons based on worker type
     tab_names = list(files.keys())
-    tabs = st.tabs([f"📄 {name}" for name in tab_names])
+    if worker_type == "email":
+        tab_icons = {
+            'src/index.ts': '📧',
+            'src/types.ts': '🔤',
+            'src/utils.ts': '🛠️',
+            'wrangler.toml': '⚙️',
+            'package.json': '📦',
+            'tsconfig.json': '🔧',
+            '.env.example': '🔐',
+            '.gitignore': '🚫',
+            'README.md': '📖',
+            'deploy.sh': '🚀'
+        }
+    else:
+        tab_icons = {filename: '📄' for filename in tab_names}
+
+    tabs = st.tabs([f"{tab_icons.get(name, '📄')} {name}" for name in tab_names])
 
     # Render each tab
     for tab, (filename, content) in zip(tabs, files.items()):

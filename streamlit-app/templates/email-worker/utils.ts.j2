@@ -1,0 +1,188 @@
+/**
+ * Utility functions for Email Worker
+ */
+
+/**
+ * Validate E.164 phone number format
+ */
+export function isValidE164(phoneNumber: string): boolean {
+  // E.164 format: +[country code][number]
+  // Max 15 digits (including country code)
+  const e164Regex = /^\+[1-9]\d{1,14}$/;
+  return e164Regex.test(phoneNumber);
+}
+
+/**
+ * Format phone number to E.164
+ */
+export function formatToE164(phoneNumber: string, defaultCountryCode: string = '{{ routing.default_country_code }}'): string | null {
+  // Remove all non-digit characters except +
+  let cleaned = phoneNumber.replace(/[^\d+]/g, '');
+
+  // Add country code if missing
+  if (!cleaned.startsWith('+')) {
+    cleaned = defaultCountryCode + cleaned;
+  }
+
+  // Validate format
+  if (!isValidE164(cleaned)) {
+    return null;
+  }
+
+  return cleaned;
+}
+
+/**
+ * Extract domain from email address
+ */
+export function extractDomain(email: string): string | null {
+  const match = email.match(/@([^@]+)$/);
+  return match ? match[1] : null;
+}
+
+/**
+ * Sanitize text content (remove HTML, control characters, etc.)
+ */
+export function sanitizeText(text: string): string {
+{% if routing.strip_html %}
+  // Remove HTML tags
+  let sanitized = text.replace(/<[^>]*>/g, ' ');
+
+  // Remove multiple spaces
+  sanitized = sanitized.replace(/\s+/g, ' ');
+
+  // Remove control characters except newline and tab
+  sanitized = sanitized.replace(/[\x00-\x08\x0B-\x0C\x0E-\x1F\x7F]/g, '');
+{% else %}
+  let sanitized = text;
+{% endif %}
+
+  // Trim whitespace
+  return sanitized.trim();
+}
+
+/**
+ * Truncate text to specified length, preserving word boundaries
+ */
+export function truncateText(text: string, maxLength: number): string {
+  if (text.length <= maxLength) {
+    return text;
+  }
+
+  // Try to truncate at word boundary
+  const truncated = text.substring(0, maxLength);
+  const lastSpace = truncated.lastIndexOf(' ');
+
+  if (lastSpace > maxLength * 0.8) {
+    // If we can preserve at least 80% of desired length, truncate at word
+    return truncated.substring(0, lastSpace) + '...';
+  }
+
+  // Otherwise hard truncate
+  return truncated.substring(0, maxLength - 3) + '...';
+}
+
+/**
+ * Parse email headers safely
+ */
+export function parseHeader(headerValue: string | null | undefined, defaultValue: string = ''): string {
+  if (!headerValue) {
+    return defaultValue;
+  }
+
+  // Decode MIME encoded words (RFC 2047)
+  // This is a simplified implementation
+  return headerValue.replace(/=\?([^?]+)\?([QB])\?([^?]+)\?=/gi, (match, charset, encoding, text) => {
+    try {
+      if (encoding.toUpperCase() === 'B') {
+        // Base64 decode
+        return atob(text);
+      } else if (encoding.toUpperCase() === 'Q') {
+        // Quoted-printable decode
+        return text
+          .replace(/_/g, ' ')
+          .replace(/=([0-9A-F]{2})/gi, (m, hex) => String.fromCharCode(parseInt(hex, 16)));
+      }
+    } catch (e) {
+      return match;
+    }
+    return match;
+  });
+}
+
+/**
+ * Generate unique message ID
+ */
+export function generateMessageId(): string {
+  const timestamp = Date.now();
+  const random = Math.random().toString(36).substring(2, 15);
+  return `${timestamp}-${random}`;
+}
+
+/**
+ * Format timestamp for logging
+ */
+export function formatTimestamp(date: Date = new Date()): string {
+  return date.toISOString();
+}
+
+{% if rate_limit.enabled %}
+/**
+ * Generate rate limit key
+ */
+export function getRateLimitKey(type: 'sender' | 'recipient' | 'global', identifier: string): string {
+  return `rate:${type}:${identifier}`;
+}
+
+/**
+ * Calculate rate limit window expiration
+ */
+export function getRateLimitExpiration(windowMs: number): number {
+  return Math.floor(windowMs / 1000); // Convert to seconds for KV TTL
+}
+{% endif %}
+
+/**
+ * Validate email address format
+ */
+export function isValidEmail(email: string): boolean {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+}
+
+/**
+ * Extract recipient info from email address
+ */
+export interface RecipientInfo {
+  phoneNumber: string;
+  domain: string;
+  original: string;
+}
+
+export function parseRecipient(email: string, defaultCountryCode: string = '{{ routing.default_country_code }}'): RecipientInfo | null {
+  if (!isValidEmail(email)) {
+    return null;
+  }
+
+  const domain = extractDomain(email);
+  if (!domain) {
+    return null;
+  }
+
+  // Extract phone from local part
+  const match = email.match(/^([^@]+)@/);
+  if (!match) {
+    return null;
+  }
+
+  const phoneNumber = formatToE164(match[1], defaultCountryCode);
+  if (!phoneNumber) {
+    return null;
+  }
+
+  return {
+    phoneNumber,
+    domain,
+    original: email
+  };
+}

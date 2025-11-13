@@ -136,6 +136,100 @@ class CodeGenerator:
         """
         return self._render_template('docs/deploy.sh.j2')
 
+    def generate_email_worker_code(self) -> str:
+        """
+        Generate Cloudflare Email Worker TypeScript code.
+
+        Returns:
+            TypeScript code for Email Worker
+        """
+        return self._render_template('email-worker/index.ts.j2')
+
+    def generate_email_wrangler_config(self) -> str:
+        """
+        Generate wrangler.toml for Email Worker.
+
+        Returns:
+            TOML configuration for Email Worker
+        """
+        return self._render_template('email-worker/wrangler.toml.j2')
+
+    def generate_email_package_json(self) -> str:
+        """
+        Generate package.json for Email Worker.
+
+        Returns:
+            JSON package file for Email Worker
+        """
+        return self._render_template('email-worker/package.json.j2')
+
+    def generate_email_env_example(self) -> str:
+        """
+        Generate .env.example for Email Worker.
+
+        Returns:
+            Environment file template for Email Worker
+        """
+        return self._render_template('email-worker/.env.example.j2')
+
+    def generate_email_readme(self) -> str:
+        """
+        Generate README.md for Email Worker.
+
+        Returns:
+            Markdown documentation for Email Worker
+        """
+        return self._render_template('email-worker/README.md.j2')
+
+    def generate_email_deploy_script(self) -> str:
+        """
+        Generate deployment script for Email Worker.
+
+        Returns:
+            Bash script for Email Worker deployment
+        """
+        return self._render_template('email-worker/deploy.sh.j2')
+
+    def generate_email_types(self) -> str:
+        """
+        Generate TypeScript type definitions for Email Worker.
+
+        Returns:
+            TypeScript types
+        """
+        return self._render_template('email-worker/types.ts.j2')
+
+    def generate_email_utils(self) -> str:
+        """
+        Generate utility functions for Email Worker.
+
+        Returns:
+            TypeScript utilities
+        """
+        return self._render_template('email-worker/utils.ts.j2')
+
+    def generate_all_email_worker(self) -> Dict[str, str]:
+        """
+        Generate all Email Worker files.
+
+        Returns:
+            Dictionary mapping filenames to content for Email Worker
+        """
+        files = {
+            'src/index.ts': self.generate_email_worker_code(),
+            'src/types.ts': self.generate_email_types(),
+            'src/utils.ts': self.generate_email_utils(),
+            'wrangler.toml': self.generate_email_wrangler_config(),
+            'package.json': self.generate_email_package_json(),
+            'tsconfig.json': self.generate_tsconfig(),
+            '.env.example': self.generate_email_env_example(),
+            '.gitignore': self.generate_gitignore(),
+            'README.md': self.generate_email_readme(),
+            'deploy.sh': self.generate_email_deploy_script()
+        }
+
+        return files
+
     def generate_all(self) -> Dict[str, str]:
         """
         Generate all files.

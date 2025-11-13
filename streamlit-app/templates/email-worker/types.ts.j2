@@ -1,0 +1,104 @@
+/**
+ * TypeScript type definitions for Email Worker
+ */
+
+// Twilio API Response Types
+export interface TwilioMessageResponse {
+  sid: string;
+  date_created: string;
+  date_updated: string;
+  date_sent: string | null;
+  account_sid: string;
+  to: string;
+  from: string;
+  messaging_service_sid: string | null;
+  body: string;
+  status: 'queued' | 'sending' | 'sent' | 'failed' | 'delivered' | 'undelivered';
+  num_segments: string;
+  num_media: string;
+  direction: 'inbound' | 'outbound-api' | 'outbound-call' | 'outbound-reply';
+  api_version: string;
+  price: string | null;
+  price_unit: string | null;
+  error_code: string | null;
+  error_message: string | null;
+  uri: string;
+  subresource_uris: {
+    media: string;
+  };
+}
+
+export interface TwilioErrorResponse {
+  code: number;
+  message: string;
+  more_info: string;
+  status: number;
+}
+
+// Email Processing Types
+export interface EmailMetadata {
+  from: string;
+  to: string;
+  subject?: string;
+  messageId?: string;
+  timestamp: number;
+}
+
+export interface ParsedEmail {
+  metadata: EmailMetadata;
+  content: string;
+  phoneNumber: string;
+}
+
+export interface SMSResult {
+  success: boolean;
+  messageSid?: string;
+  error?: string;
+  timestamp: number;
+}
+
+{% if rate_limit.enabled %}
+// Rate Limiting Types
+export interface RateLimitResult {
+  allowed: boolean;
+  reason?: string;
+  senderCount?: number;
+  recipientCount?: number;
+}
+
+export interface RateLimitConfig {
+  perSender: number;
+  perRecipient: number;
+  globalLimit: number;
+  windowMs: number;
+}
+{% endif %}
+
+{% if logging.enabled %}
+// Analytics Types
+export interface AnalyticsEvent {
+  type: 'sms_sent' | 'sms_failed' | 'invalid_phone' | 'rate_limited' | 'sender_blocked' | 'processing_error';
+  timestamp: number;
+  from: string;
+  to: string;
+  error?: string;
+  messageSid?: string;
+}
+{% endif %}
+
+// Worker Configuration
+export interface WorkerConfig {
+  domain: string;
+  emailPattern: string;
+  maxMessageLength: number;
+  defaultCountryCode: string;
+{% if routing.strip_html %}
+  stripHtml: boolean;
+{% endif %}
+{% if routing.include_sender_info %}
+  includeSenderInfo: boolean;
+{% endif %}
+{% if rate_limit.enabled %}
+  rateLimit: RateLimitConfig;
+{% endif %}
+}

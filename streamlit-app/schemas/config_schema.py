@@ -29,6 +29,11 @@ class EmailRoutingConfig:
     max_message_length: int = 160
     strip_html: bool = True
     include_sender_info: bool = False
+    # Email Worker specific settings
+    email_routing_enabled: bool = False
+    email_routing_pattern: str = "*@{domain}"
+    email_subject_in_message: bool = False
+    preserve_email_formatting: bool = False
 
 
 @dataclass
@@ -89,6 +94,11 @@ class CloudflareConfig:
     analytics_dataset_name: str = "EMAIL_SMS_ANALYTICS"
     compatibility_date: str = "2024-10-22"
     compatibility_flags: List[str] = field(default_factory=lambda: ["nodejs_compat"])
+    # Email Worker specific settings
+    email_worker_enabled: bool = False
+    email_routing_domain: Optional[str] = None
+    email_worker_route: str = ""
+    email_max_size_mb: int = 25
 
 
 @dataclass

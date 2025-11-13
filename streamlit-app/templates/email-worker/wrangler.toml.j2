@@ -1,0 +1,55 @@
+#:schema node_modules/wrangler/config-schema.json
+name = "{{ basic.worker_name }}"
+main = "src/index.ts"
+compatibility_date = "{{ cloudflare.compatibility_date }}"
+compatibility_flags = {{ cloudflare.compatibility_flags | tojson }}
+
+# Email Routing Configuration
+[email]
+# This worker will handle incoming emails for the configured routes
+
+# Environment Variables (secrets managed via wrangler secret put)
+# TWILIO_ACCOUNT_SID - Set via: wrangler secret put TWILIO_ACCOUNT_SID
+# TWILIO_AUTH_TOKEN - Set via: wrangler secret put TWILIO_AUTH_TOKEN
+# TWILIO_PHONE_NUMBER - Set via: wrangler secret put TWILIO_PHONE_NUMBER
+
+{% if rate_limit.enabled and rate_limit.storage == "kv" %}
+# KV Namespace for Rate Limiting
+[[kv_namespaces]]
+binding = "RATE_LIMIT_KV"
+{% if cloudflare.kv_namespace_id %}
+id = "{{ cloudflare.kv_namespace_id }}"
+{% else %}
+# Create with: wrangler kv:namespace create "RATE_LIMIT_KV"
+# Then set the id here
+id = "YOUR_KV_NAMESPACE_ID"
+{% endif %}
+{% endif %}
+
+{% if logging.enabled and logging.storage_type == "analytics_engine" %}
+# Analytics Engine Dataset
+[[analytics_engine_datasets]]
+binding = "EMAIL_SMS_ANALYTICS"
+{% endif %}
+
+{% if metadata.author %}
+# Metadata
+[vars]
+GENERATED_BY = "{{ metadata.generated_by }}"
+VERSION = "{{ metadata.version }}"
+AUTHOR = "{{ metadata.author }}"
+{% endif %}
+
+# Build Configuration
+[build]
+command = "npm run build"
+
+# Deployment
+[env.production]
+name = "{{ basic.worker_name }}"
+{% if cloudflare.email_worker_route %}
+route = "{{ cloudflare.email_worker_route }}"
+{% endif %}
+
+[env.staging]
+name = "{{ basic.worker_name }}-staging"
