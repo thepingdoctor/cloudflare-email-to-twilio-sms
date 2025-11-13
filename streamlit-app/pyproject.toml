@@ -3,15 +3,15 @@ requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
-name = "email2sms-generator"
+name = "cloudflare-email-to-twilio-sms-generator"
 version = "1.0.0"
 description = "Streamlit application for generating Cloudflare Worker code to convert emails to SMS via Twilio"
 authors = ["Your Name <your.email@example.com>"]
 license = "MIT"
 readme = "README.md"
-homepage = "https://github.com/yourusername/email2sms"
-repository = "https://github.com/yourusername/email2sms"
-documentation = "https://github.com/yourusername/email2sms/blob/main/docs"
+homepage = "https://github.com/yourusername/cloudflare-email-to-twilio-sms"
+repository = "https://github.com/yourusername/cloudflare-email-to-twilio-sms"
+documentation = "https://github.com/yourusername/cloudflare-email-to-twilio-sms/blob/main/docs"
 keywords = [
     "streamlit",
     "cloudflare",
@@ -107,7 +107,7 @@ pytest-benchmark = "^4.0.0"
 pytest-html = "^3.2.0"
 
 [tool.poetry.scripts]
-email2sms-generator = "streamlit:run app.py"
+cloudflare-email-to-twilio-sms-generator = "streamlit:run app.py"
 e2s-start = "streamlit:run app.py --server.port=8501 --server.address=0.0.0.0"
 
 # Black Configuration

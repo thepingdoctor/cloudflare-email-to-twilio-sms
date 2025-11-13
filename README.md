@@ -1,4 +1,4 @@
-# Email-to-SMS Cloudflare Worker
+# Cloudflare Email-to-Twilio-SMS Worker
 
 **Version:** 1.0.0
 **Status:** Production Ready
@@ -41,7 +41,7 @@ A comprehensive email-to-SMS conversion system with two components:
 ```bash
 # 1. Clone repository
 git clone <repository-url>
-cd email2sms
+cd cloudflare-email-to-twilio-sms
 
 # 2. Install dependencies
 npm install
@@ -151,7 +151,7 @@ Body: Your message here
 ## 🏗️ Project Structure
 
 ```
-email2sms/
+cloudflare-email-to-twilio-sms/
 ├── src/                    # Cloudflare Worker source code
 │   ├── worker/            # Main entry point
 │   │   └── index.ts       # Email handler and routing
@@ -255,7 +255,7 @@ npm run tail
 ```
 
 ### Cloudflare Analytics
-- Dashboard → Workers & Pages → email-to-sms-worker → Metrics
+- Dashboard → Workers & Pages → cloudflare-email-to-twilio-sms → Metrics
 - Request count, success rate, error distribution, processing time
 
 ### KV Audit Trail
@@ -415,7 +415,7 @@ Contributions welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guideli
 ```bash
 # Fork and clone repository
 git clone <your-fork-url>
-cd email2sms
+cd cloudflare-email-to-twilio-sms
 
 # Install dependencies
 npm install

@@ -1,5 +1,5 @@
 {
-  "name": "email-to-sms-worker",
+  "name": "cloudflare-email-to-twilio-sms",
   "version": "1.0.0",
   "description": "Cloudflare Worker that converts emails to SMS via Twilio",
   "main": "src/worker/index.ts",

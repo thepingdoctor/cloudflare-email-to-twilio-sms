@@ -80,11 +80,11 @@ Look for issues labeled:
 # 1. Fork repository on GitHub
 
 # 2. Clone your fork
-git clone https://github.com/YOUR_USERNAME/email2sms.git
-cd email2sms
+git clone https://github.com/YOUR_USERNAME/cloudflare-email-to-twilio-sms.git
+cd cloudflare-email-to-twilio-sms
 
 # 3. Add upstream remote
-git remote add upstream https://github.com/ORIGINAL_OWNER/email2sms.git
+git remote add upstream https://github.com/ORIGINAL_OWNER/cloudflare-email-to-twilio-sms.git
 ```
 
 ### Install Dependencies

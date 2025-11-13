@@ -14,7 +14,7 @@
           "type": "string",
           "description": "Name for your Cloudflare Worker",
           "pattern": "^[a-z0-9-]{1,63}$",
-          "default": "email-to-sms-worker",
+          "default": "cloudflare-email-to-twilio-sms",
           "examples": ["my-email-sms", "company-sms-gateway"]
         },
         "domain": {

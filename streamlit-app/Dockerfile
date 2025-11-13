@@ -1,7 +1,7 @@
-# Multi-stage Dockerfile for Email2SMS Generator
+# Multi-stage Dockerfile for Cloudflare Email-to-Twilio-SMS Generator
 # Supports both pip (requirements.txt) and Poetry (pyproject.toml)
-# Use: docker build -t email2sms-generator .
-# Or with Poetry: docker build -f Dockerfile.poetry -t email2sms-generator .
+# Use: docker build -t cloudflare-email-to-twilio-sms-generator .
+# Or with Poetry: docker build -f Dockerfile.poetry -t cloudflare-email-to-twilio-sms-generator .
 
 FROM python:3.11-slim
 

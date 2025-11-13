@@ -6,7 +6,7 @@ APP_SUBTITLE = "Cloudflare Workers + Twilio Integration"
 APP_VERSION = "1.0.0"
 
 # Default Values
-DEFAULT_WORKER_NAME = "email-to-sms-worker"
+DEFAULT_WORKER_NAME = "cloudflare-email-to-twilio-sms"
 DEFAULT_EMAIL_PATTERN = "*@sms.{domain}"
 DEFAULT_COUNTRY_CODE = "+1"
 DEFAULT_MAX_MESSAGE_LENGTH = 160
