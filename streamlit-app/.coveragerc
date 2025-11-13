@@ -1,0 +1,104 @@
+# Coverage.py configuration for test coverage reporting
+
+[run]
+# Source directories to measure
+source = .
+
+# Files to omit from coverage
+omit =
+    */tests/*
+    */test_*.py
+    */__pycache__/*
+    */venv/*
+    */env/*
+    */.venv/*
+    */site-packages/*
+    setup.py
+    conftest.py
+
+# Branch coverage
+branch = True
+
+# Parallel mode for pytest-xdist
+parallel = True
+
+[report]
+# Precision for coverage percentage
+precision = 2
+
+# Show missing lines
+show_missing = True
+
+# Skip covered files
+skip_covered = False
+
+# Skip empty files
+skip_empty = True
+
+# Sort by name
+sort = Name
+
+# Exclude lines from coverage
+exclude_lines =
+    # Standard pragma
+    pragma: no cover
+
+    # Debug-only code
+    def __repr__
+    def __str__
+
+    # Defensive programming
+    raise AssertionError
+    raise NotImplementedError
+    raise ValueError
+    raise TypeError
+
+    # Type checking
+    if TYPE_CHECKING:
+    if typing.TYPE_CHECKING:
+
+    # Abstract methods
+    @abstractmethod
+    @abc.abstractmethod
+
+    # Protocols
+    @protocol
+    @typing.Protocol
+
+    # Debug mode
+    if __name__ == .__main__.:
+    if __name__ == "__main__":
+
+    # Ellipsis
+    \.\.\.
+
+    # Pass statements
+    pass
+
+# Fail if coverage is below threshold
+fail_under = 85.0
+
+[html]
+# HTML output directory
+directory = htmlcov
+
+# Extra CSS
+extra_css = None
+
+# Title
+title = Streamlit App Test Coverage Report
+
+[xml]
+# XML output file
+output = coverage.xml
+
+[json]
+# JSON output file
+output = coverage.json
+pretty_print = True
+
+[paths]
+# Map coverage paths for better reporting
+source =
+    .
+    */streamlit-app

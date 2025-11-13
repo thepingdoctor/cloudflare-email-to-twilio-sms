@@ -1,0 +1,402 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Email-to-SMS Worker Configuration",
+  "description": "Complete configuration schema for Cloudflare Email-to-SMS Worker",
+  "type": "object",
+  "required": ["basic", "twilio", "routing"],
+  "properties": {
+    "basic": {
+      "type": "object",
+      "description": "Basic worker configuration",
+      "required": ["worker_name", "domain", "email_pattern"],
+      "properties": {
+        "worker_name": {
+          "type": "string",
+          "description": "Name for your Cloudflare Worker",
+          "pattern": "^[a-z0-9-]{1,63}$",
+          "default": "email-to-sms-worker",
+          "examples": ["my-email-sms", "company-sms-gateway"]
+        },
+        "domain": {
+          "type": "string",
+          "description": "Domain where emails will be received",
+          "format": "hostname",
+          "examples": ["example.com", "mycompany.io"]
+        },
+        "email_pattern": {
+          "type": "string",
+          "description": "Pattern for incoming emails (* for wildcard)",
+          "default": "*@sms.{domain}",
+          "examples": ["*@sms.example.com", "sms@example.com", "*@example.com"]
+        }
+      }
+    },
+    "twilio": {
+      "type": "object",
+      "description": "Twilio API configuration",
+      "required": ["account_sid", "auth_token", "phone_number"],
+      "properties": {
+        "account_sid": {
+          "type": "string",
+          "description": "Twilio Account SID (starts with AC)",
+          "pattern": "^AC[a-z0-9]{32}$",
+          "minLength": 34,
+          "maxLength": 34,
+          "examples": ["ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"]
+        },
+        "auth_token": {
+          "type": "string",
+          "description": "Twilio Auth Token",
+          "minLength": 32,
+          "examples": ["your_auth_token_here"]
+        },
+        "phone_number": {
+          "type": "string",
+          "description": "Your Twilio phone number in E.164 format",
+          "pattern": "^\\+[1-9]\\d{1,14}$",
+          "examples": ["+15551234567", "+442012345678"]
+        }
+      }
+    },
+    "routing": {
+      "type": "object",
+      "description": "Email routing and parsing configuration",
+      "required": ["phone_extraction_method", "content_source"],
+      "properties": {
+        "phone_extraction_method": {
+          "type": "string",
+          "description": "Method to extract recipient phone number",
+          "enum": [
+            "email_prefix",
+            "subject_line",
+            "custom_header",
+            "all_methods"
+          ],
+          "default": "email_prefix",
+          "examples": ["email_prefix"]
+        },
+        "default_country_code": {
+          "type": "string",
+          "description": "Default country code for numbers without one",
+          "pattern": "^\\+[1-9]\\d{0,3}$",
+          "default": "+1",
+          "examples": ["+1", "+44", "+61"]
+        },
+        "content_source": {
+          "type": "string",
+          "description": "Source of message content",
+          "enum": [
+            "body_text",
+            "body_html",
+            "subject",
+            "subject_and_body"
+          ],
+          "default": "body_text"
+        },
+        "max_message_length": {
+          "type": "integer",
+          "description": "Maximum SMS length in characters",
+          "minimum": 160,
+          "maximum": 1600,
+          "default": 160,
+          "examples": [160, 320, 1600]
+        },
+        "strip_html": {
+          "type": "boolean",
+          "description": "Remove HTML tags from content",
+          "default": true
+        },
+        "include_sender_info": {
+          "type": "boolean",
+          "description": "Include sender email in SMS",
+          "default": false
+        }
+      }
+    },
+    "rate_limit": {
+      "type": "object",
+      "description": "Rate limiting configuration",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Enable rate limiting",
+          "default": true
+        },
+        "per_sender": {
+          "type": "integer",
+          "description": "Max messages per sender per hour",
+          "minimum": 1,
+          "maximum": 1000,
+          "default": 10
+        },
+        "per_recipient": {
+          "type": "integer",
+          "description": "Max messages per recipient per hour",
+          "minimum": 1,
+          "maximum": 1000,
+          "default": 20
+        },
+        "global_limit": {
+          "type": "integer",
+          "description": "Global daily message limit",
+          "minimum": 1,
+          "default": 1000
+        },
+        "storage": {
+          "type": "string",
+          "description": "Storage backend for rate limits",
+          "enum": ["kv", "durable_objects", "memory"],
+          "default": "kv"
+        }
+      }
+    },
+    "logging": {
+      "type": "object",
+      "description": "Logging and monitoring configuration",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Enable logging",
+          "default": true
+        },
+        "storage_type": {
+          "type": "string",
+          "description": "Where to store logs",
+          "enum": ["console", "kv", "analytics_engine"],
+          "default": "analytics_engine"
+        },
+        "log_level": {
+          "type": "string",
+          "description": "Logging level",
+          "enum": ["debug", "info", "warn", "error"],
+          "default": "info"
+        },
+        "log_sensitive_data": {
+          "type": "boolean",
+          "description": "Include phone numbers and content in logs",
+          "default": false
+        }
+      }
+    },
+    "security": {
+      "type": "object",
+      "description": "Security and validation settings",
+      "properties": {
+        "enable_sender_whitelist": {
+          "type": "boolean",
+          "description": "Only allow specific senders",
+          "default": false
+        },
+        "sender_whitelist": {
+          "type": "array",
+          "description": "Allowed sender email addresses",
+          "items": {
+            "type": "string",
+            "format": "email"
+          },
+          "examples": [["user@example.com", "admin@company.com"]]
+        },
+        "enable_domain_whitelist": {
+          "type": "boolean",
+          "description": "Only allow specific domains",
+          "default": false
+        },
+        "domain_whitelist": {
+          "type": "array",
+          "description": "Allowed sender domains",
+          "items": {
+            "type": "string",
+            "format": "hostname"
+          },
+          "examples": [["example.com", "trusted-partner.io"]]
+        },
+        "enable_content_filtering": {
+          "type": "boolean",
+          "description": "Filter spam/profanity",
+          "default": false
+        },
+        "require_spf": {
+          "type": "boolean",
+          "description": "Require valid SPF records",
+          "default": false
+        },
+        "require_dkim": {
+          "type": "boolean",
+          "description": "Require valid DKIM signature",
+          "default": false
+        }
+      }
+    },
+    "retry": {
+      "type": "object",
+      "description": "Retry logic for failed sends",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Enable automatic retries",
+          "default": true
+        },
+        "max_retries": {
+          "type": "integer",
+          "description": "Maximum retry attempts",
+          "minimum": 1,
+          "maximum": 5,
+          "default": 3
+        },
+        "retry_delay": {
+          "type": "integer",
+          "description": "Delay between retries in seconds",
+          "minimum": 1,
+          "maximum": 60,
+          "default": 5
+        },
+        "backoff_strategy": {
+          "type": "string",
+          "description": "Retry backoff strategy",
+          "enum": ["fixed", "exponential", "linear"],
+          "default": "exponential"
+        }
+      }
+    },
+    "integrations": {
+      "type": "object",
+      "description": "Optional integrations and features",
+      "properties": {
+        "enable_url_shortening": {
+          "type": "boolean",
+          "description": "Automatically shorten URLs",
+          "default": false
+        },
+        "url_shortener_service": {
+          "type": "string",
+          "description": "URL shortening service to use",
+          "enum": ["bitly", "tinyurl", "custom"],
+          "default": "bitly"
+        },
+        "enable_error_notifications": {
+          "type": "boolean",
+          "description": "Send error notifications",
+          "default": false
+        },
+        "notification_email": {
+          "type": "string",
+          "description": "Email for error notifications",
+          "format": "email",
+          "examples": ["admin@example.com"]
+        },
+        "notification_webhook": {
+          "type": "string",
+          "description": "Webhook URL for notifications",
+          "format": "uri",
+          "examples": ["https://hooks.slack.com/services/xxx"]
+        },
+        "custom_headers": {
+          "type": "object",
+          "description": "Custom headers to check in emails",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "examples": [
+            {
+              "X-SMS-Priority": "high",
+              "X-SMS-Category": "alert"
+            }
+          ]
+        }
+      }
+    },
+    "cloudflare": {
+      "type": "object",
+      "description": "Cloudflare-specific settings",
+      "properties": {
+        "kv_namespace_id": {
+          "type": "string",
+          "description": "KV Namespace ID (if using KV)",
+          "pattern": "^[a-f0-9]{32}$",
+          "examples": ["0123456789abcdef0123456789abcdef"]
+        },
+        "analytics_dataset_name": {
+          "type": "string",
+          "description": "Analytics Engine dataset name",
+          "default": "EMAIL_SMS_ANALYTICS"
+        },
+        "compatibility_date": {
+          "type": "string",
+          "description": "Workers compatibility date",
+          "format": "date",
+          "default": "2024-10-22",
+          "examples": ["2024-10-22", "2024-01-01"]
+        },
+        "compatibility_flags": {
+          "type": "array",
+          "description": "Workers compatibility flags",
+          "items": {
+            "type": "string"
+          },
+          "default": ["nodejs_compat"],
+          "examples": [["nodejs_compat", "streams_enable_constructors"]]
+        }
+      }
+    },
+    "features": {
+      "type": "object",
+      "description": "Feature flags for optional functionality",
+      "properties": {
+        "enable_bidirectional": {
+          "type": "boolean",
+          "description": "Allow SMS replies (future feature)",
+          "default": false
+        },
+        "enable_mms": {
+          "type": "boolean",
+          "description": "Support MMS/attachments (future)",
+          "default": false
+        },
+        "enable_scheduling": {
+          "type": "boolean",
+          "description": "Schedule message sending (future)",
+          "default": false
+        },
+        "enable_templates": {
+          "type": "boolean",
+          "description": "Use message templates (future)",
+          "default": false
+        },
+        "enable_analytics_dashboard": {
+          "type": "boolean",
+          "description": "Include analytics dashboard (future)",
+          "default": false
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Metadata about this configuration",
+      "properties": {
+        "version": {
+          "type": "string",
+          "description": "Configuration schema version",
+          "default": "1.0.0"
+        },
+        "generated_by": {
+          "type": "string",
+          "description": "Tool that generated this config",
+          "default": "email-to-sms-streamlit-generator"
+        },
+        "generated_at": {
+          "type": "string",
+          "description": "Timestamp of generation",
+          "format": "date-time"
+        },
+        "author": {
+          "type": "string",
+          "description": "Configuration author"
+        },
+        "notes": {
+          "type": "string",
+          "description": "Additional notes or comments"
+        }
+      }
+    }
+  }
+}

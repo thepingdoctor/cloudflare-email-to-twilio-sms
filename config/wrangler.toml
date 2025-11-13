@@ -1,0 +1,79 @@
+# Cloudflare Worker Configuration
+# Email-to-SMS Service
+
+name = "email-to-sms-worker"
+main = "src/worker/index.ts"
+compatibility_date = "2024-10-22"
+compatibility_flags = ["nodejs_compat"]
+
+# Account information
+# account_id = "your-account-id"  # Add your Cloudflare account ID
+
+# Worker settings
+workers_dev = true
+route = ""  # Set your route if deploying to a domain
+
+# Observability
+[observability]
+enabled = true
+
+# Optional: KV Namespace for rate limiting and logging
+# Uncomment and configure after creating KV namespace:
+# wrangler kv:namespace create EMAIL_SMS_KV
+# [[kv_namespaces]]
+# binding = "EMAIL_SMS_KV"
+# id = "your-kv-namespace-id"
+# preview_id = "your-preview-kv-namespace-id"
+
+# Optional: Analytics Engine for metrics
+# [[analytics_engine_datasets]]
+# binding = "EMAIL_SMS_ANALYTICS"
+
+# Environment variables (non-sensitive)
+[vars]
+# DEFAULT_COUNTRY_CODE = "1"  # Default country code for phone numbers
+# ALLOWED_SENDERS = "user@example.com,*@trusted-domain.com"  # Comma-separated allowlist
+
+# Secrets (use: wrangler secret put <KEY>)
+# These must be set via CLI for security:
+#
+# Production:
+#   wrangler secret put TWILIO_ACCOUNT_SID
+#   wrangler secret put TWILIO_AUTH_TOKEN
+#   wrangler secret put TWILIO_PHONE_NUMBER
+#
+# Development (.dev.vars file):
+#   TWILIO_ACCOUNT_SID=ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+#   TWILIO_AUTH_TOKEN=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+#   TWILIO_PHONE_NUMBER=+1234567890
+#   ALLOWED_SENDERS=test@example.com
+
+# Build configuration
+[build]
+command = "npm run build"
+
+# Email Routing Configuration
+# Note: Email routes must be configured via Cloudflare Dashboard:
+# 1. Go to Email Routing section
+# 2. Add custom address or route
+# 3. Set action to "Send to Worker"
+# 4. Select this worker
+#
+# Example routes:
+#   - *@sms.yourdomain.com (catch-all)
+#   - specific-address@yourdomain.com (specific address)
+#   - 15551234567@sms.yourdomain.com (phone number in prefix)
+
+# Deployment environments
+[env.production]
+name = "email-to-sms-worker"
+# vars for production can be set here
+
+[env.staging]
+name = "email-to-sms-worker-staging"
+# vars for staging can be set here
+
+# Development configuration
+[env.development]
+name = "email-to-sms-worker-dev"
+# Development uses .dev.vars file for secrets
