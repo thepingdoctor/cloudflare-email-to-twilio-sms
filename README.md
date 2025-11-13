@@ -58,6 +58,24 @@ npm run deploy:production
 
 ### Option 2: Generate Custom Worker (Most Flexible)
 
+#### Using Poetry (Recommended)
+
+```bash
+# 1. Install Poetry
+curl -sSL https://install.python-poetry.org | python3 -
+
+# 2. Start Streamlit UI
+cd streamlit-app
+poetry install
+poetry run streamlit run app.py
+
+# 3. Configure in browser (http://localhost:8501)
+# 4. Generate and download code
+# 5. Follow deployment instructions
+```
+
+#### Using pip
+
 ```bash
 # 1. Start Streamlit UI
 cd streamlit-app
@@ -82,8 +100,9 @@ streamlit run app.py
 
 ### Required Software
 - **Node.js** 18+ (for Worker)
-- **Python** 3.8+ (for Streamlit UI)
-- **npm** 9+ (for dependencies)
+- **Python** 3.8+ (3.11+ recommended for Streamlit UI)
+- **npm** 9+ (for Worker dependencies)
+- **Poetry** 1.0+ (optional but recommended for Streamlit)
 - **Git** (for version control)
 
 ---
