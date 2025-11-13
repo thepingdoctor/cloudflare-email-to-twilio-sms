@@ -1,9 +1,8 @@
 """Main code generator orchestrator."""
 import os
 from pathlib import Path
-from typing import Dict, Any
+from typing import Dict
 from jinja2 import Environment, FileSystemLoader, Template
-from markupsafe import escape
 from schemas import WorkerConfig
 
 
@@ -36,51 +35,6 @@ class CodeGenerator:
         import json
         return json.dumps(value)
 
-    def _sanitize_value(self, value: Any) -> Any:
-        """
-        Sanitize a single value to prevent template injection.
-
-        Args:
-            value: Value to sanitize (string, list, dict, etc.)
-
-        Returns:
-            Sanitized value
-        """
-        if isinstance(value, str):
-            # Escape Jinja2 template delimiters to prevent injection
-            # Replace {{ with \{\{, {# with \{\#, {% with \{\%
-            sanitized = value.replace('{{', r'\{\{')
-            sanitized = sanitized.replace('{%', r'\{\%')
-            sanitized = sanitized.replace('{#', r'\{\#')
-            # Use markupsafe escape for HTML entities
-            return str(escape(sanitized))
-        elif isinstance(value, list):
-            return [self._sanitize_value(item) for item in value]
-        elif isinstance(value, dict):
-            return {key: self._sanitize_value(val) for key, val in value.items()}
-        else:
-            return value
-
-    def _sanitize_context(self, context: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Sanitize entire template context to prevent injection attacks.
-
-        Args:
-            context: Template context dictionary
-
-        Returns:
-            Sanitized context dictionary
-        """
-        sanitized = {}
-        for key, value in context.items():
-            # Sanitize each section of the config
-            if hasattr(value, '__dict__'):
-                # For dataclass objects, convert to dict and sanitize
-                sanitized[key] = self._sanitize_value(value.__dict__)
-            else:
-                sanitized[key] = self._sanitize_value(value)
-        return sanitized
-
     def _render_template(self, template_path: str) -> str:
         """
         Render a template with configuration.
@@ -108,10 +62,7 @@ class CodeGenerator:
             'metadata': self.config.metadata
         }
 
-        # Sanitize context to prevent template injection
-        sanitized_context = self._sanitize_context(context)
-
-        return template.render(**sanitized_context)
+        return template.render(**context)
 
     def generate_worker_code(self) -> str:
         """
@@ -281,41 +232,23 @@ class CodeGenerator:
 
     def generate_all(self) -> Dict[str, str]:
         """
-        Generate all files with validation.
+        Generate all files.
 
         Returns:
             Dictionary mapping filenames to content
-
-        Raises:
-            ValueError: If configuration is invalid
-            RuntimeError: If file generation fails
         """
-        # Pre-validation
-        is_valid, errors = self.validate_config()
-        if not is_valid:
-            raise ValueError(f"Invalid configuration: {', '.join(errors)}")
+        files = {
+            'src/index.ts': self.generate_worker_code(),
+            'wrangler.toml': self.generate_wrangler_config(),
+            'package.json': self.generate_package_json(),
+            'tsconfig.json': self.generate_tsconfig(),
+            '.env.example': self.generate_env_example(),
+            '.gitignore': self.generate_gitignore(),
+            'README.md': self.generate_readme(),
+            'deploy.sh': self.generate_deploy_script()
+        }
 
-        try:
-            files = {
-                'src/index.ts': self.generate_worker_code(),
-                'wrangler.toml': self.generate_wrangler_config(),
-                'package.json': self.generate_package_json(),
-                'tsconfig.json': self.generate_tsconfig(),
-                '.env.example': self.generate_env_example(),
-                '.gitignore': self.generate_gitignore(),
-                'README.md': self.generate_readme(),
-                'deploy.sh': self.generate_deploy_script()
-            }
-
-            # Validate that all files have content
-            for filename, content in files.items():
-                if not content or len(content.strip()) == 0:
-                    raise RuntimeError(f"Generated file '{filename}' is empty")
-
-            return files
-
-        except Exception as e:
-            raise RuntimeError(f"File generation failed: {str(e)}") from e
+        return files
 
     def validate_config(self) -> tuple[bool, list[str]]:
         """

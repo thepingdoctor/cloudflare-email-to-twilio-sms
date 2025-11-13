@@ -93,7 +93,7 @@ export class Logger {
    * Log email-to-SMS transaction
    */
   async logTransaction(entry: LogEntry): Promise<void> {
-    this.info('Email-to-SMS transaction', entry as unknown as Record<string, unknown>);
+    this.info('Email-to-SMS transaction', entry);
 
     // Store in KV if available (for audit trail)
     if (this.env.EMAIL_SMS_KV) {
@@ -111,7 +111,7 @@ export class Logger {
   /**
    * Create a child logger with additional context
    */
-  child(_context: Record<string, unknown>): Logger {
+  child(context: Record<string, unknown>): Logger {
     const child = new Logger(this.env, this.requestId);
     // Store context for all child logs
     return child;

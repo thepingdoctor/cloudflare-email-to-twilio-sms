@@ -264,3 +264,85 @@ def generate_example_email(pattern: str, domain: str) -> str:
     example = pattern.replace('{domain}', domain)
     example = example.replace('*', '15551234567')
     return example
+
+
+def mask_sensitive_value(value: str, show_chars: int = 4) -> str:
+    """
+    Mask sensitive value for display.
+
+    Args:
+        value: Sensitive value to mask
+        show_chars: Number of characters to show at start/end
+
+    Returns:
+        Masked value
+    """
+    if not value or len(value) <= show_chars * 2:
+        return "****"
+
+    return f"{value[:show_chars]}{'*' * (len(value) - show_chars * 2)}{value[-show_chars:]}"
+
+
+def validate_no_hardcoded_secrets(code: str) -> tuple[bool, list[str]]:
+    """
+    Check generated code for hardcoded secrets.
+
+    Args:
+        code: Generated code to check
+
+    Returns:
+        Tuple of (is_safe, list of warnings)
+    """
+    warnings = []
+
+    # Patterns to detect hardcoded secrets
+    patterns = {
+        'Twilio SID': r'AC[a-f0-9]{32}',
+        'API Key': r'["\']sk_[a-zA-Z0-9]{32,}["\']',
+        'Auth Token': r'["\'][a-f0-9]{32,}["\']',
+        'Password': r'password\s*=\s*["\'][^"\']+["\']',
+    }
+
+    for secret_type, pattern in patterns.items():
+        import re
+        if re.search(pattern, code, re.IGNORECASE):
+            warnings.append(f"Potential hardcoded {secret_type} detected")
+
+    return len(warnings) == 0, warnings
+
+
+def sanitize_config_for_export(config_dict: dict) -> dict:
+    """
+    Sanitize configuration for safe export (remove sensitive data).
+
+    Args:
+        config_dict: Configuration dictionary
+
+    Returns:
+        Sanitized configuration
+    """
+    import copy
+    safe_config = copy.deepcopy(config_dict)
+
+    # Remove sensitive fields
+    sensitive_paths = [
+        ('twilio', 'account_sid'),
+        ('twilio', 'auth_token'),
+        ('twilio', 'phone_number'),
+        ('cloudflare', 'api_token'),
+        ('integrations', 'notification_email')
+    ]
+
+    for path in sensitive_paths:
+        current = safe_config
+        for key in path[:-1]:
+            if key in current and isinstance(current[key], dict):
+                current = current[key]
+            else:
+                break
+        else:
+            # Replace with placeholder
+            if path[-1] in current:
+                current[path[-1]] = f"<{path[-1].upper()}_PLACEHOLDER>"
+
+    return safe_config

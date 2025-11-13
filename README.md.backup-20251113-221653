@@ -66,23 +66,10 @@ The Streamlit app now supports **Email Worker generation** with complete Cloudfl
 #### Using Poetry (Recommended)
 
 ```bash
-# 1. Install Poetry (if not already installed)
-# macOS/Linux/WSL:
+# 1. Install Poetry
 curl -sSL https://install.python-poetry.org | python3 -
 
-# Windows (PowerShell):
-(Invoke-WebRequest -Uri https://install.python-poetry.org -UseBasicParsing).Content | py -
-
-# 2. Verify Poetry installation
-poetry --version
-# Expected output: Poetry (version 1.x.x)
-
-# If poetry command not found, add to PATH:
-# macOS/Linux: Add to ~/.bashrc or ~/.zshrc
-export PATH="$HOME/.local/bin:$PATH"
-# Then: source ~/.bashrc (or restart terminal)
-
-# 3. Start Streamlit UI
+# 2. Start Streamlit UI
 cd streamlit-app
 poetry install
 poetry run streamlit run app.py
@@ -95,22 +82,6 @@ poetry run streamlit run app.py
 # 4. Generate and download Email Worker code (8 files, 1,059 lines)
 # 5. Follow automated deployment instructions
 ```
-
-### ⚠️ CRITICAL: Email Routing Production-Only Limitation
-
-**Cloudflare Email Routing ONLY works in production deployments:**
-
-| Environment | Email Routing Support | Recommendation |
-|-------------|----------------------|----------------|
-| `wrangler dev` (local) | ❌ **NOT SUPPORTED** | Use HTTP worker mode for local testing |
-| `wrangler deploy` (production) | ✅ **FULLY SUPPORTED** | Deploy to production/staging for email testing |
-| Cloudflare Dashboard | ✅ **CONFIGURATION REQUIRED** | Must configure email routing rules AFTER deployment |
-
-**Key Points:**
-- Email Routing does NOT work with `wrangler dev` (local development server)
-- Email Routing ONLY works after deploying with `wrangler deploy` to production
-- You MUST configure Email Routing in the Cloudflare Dashboard after deployment
-- For local testing: Use HTTP worker mode or deploy to staging environment
 
 #### Using pip
 

@@ -65,6 +65,7 @@ python = ">=3.8.1,<3.9.7 || >3.9.7,<4.0"
 streamlit = "1.31.0"
 # Template Engine
 jinja2 = "^3.1.3"
+markupsafe = "^2.1.5"
 # Syntax Highlighting
 pygments = "^2.17.2"
 # Validation

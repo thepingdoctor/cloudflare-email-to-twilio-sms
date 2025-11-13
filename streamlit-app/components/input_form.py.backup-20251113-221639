@@ -6,7 +6,6 @@ from utils import (
     validate_worker_name, validate_domain, validate_email,
     validate_phone_number, validate_twilio_sid, validate_twilio_token,
     validate_email_pattern, validate_sender_whitelist,
-    sanitize_user_input, validate_api_credentials,
     PHONE_EXTRACTION_METHODS, CONTENT_SOURCE_OPTIONS,
     LOG_STORAGE_TYPES, BACKOFF_STRATEGIES, HELP_TEXT,
     generate_example_email
@@ -29,12 +28,10 @@ def render_basic_settings() -> BasicConfig:
             "Worker Name",
             value=st.session_state.get('worker_name', 'email-to-sms-worker'),
             help=HELP_TEXT['worker_name'],
-            key='worker_name_input',
-            max_chars=63
+            key='worker_name_input'
         )
 
-        # Sanitize and validate worker name
-        worker_name = sanitize_user_input(worker_name, max_length=63)
+        # Validate worker name
         is_valid, error = validate_worker_name(worker_name)
         if not is_valid and worker_name:
             st.error(f"❌ {error}")
@@ -47,12 +44,10 @@ def render_basic_settings() -> BasicConfig:
             value=st.session_state.get('domain', ''),
             placeholder="example.com",
             help=HELP_TEXT['domain'],
-            key='domain_input',
-            max_chars=255
+            key='domain_input'
         )
 
-        # Sanitize and validate domain
-        domain = sanitize_user_input(domain, max_length=255)
+        # Validate domain
         is_valid, error = validate_domain(domain)
         if not is_valid and domain:
             st.error(f"❌ {error}")
@@ -88,21 +83,12 @@ def render_twilio_config() -> TwilioConfig:
     with st.expander("🔐 Twilio Configuration", expanded=True):
         st.markdown("Get your credentials from [Twilio Console](https://console.twilio.com/)")
 
-        # Security warning box
-        st.warning("""
-        ⚠️ **Security Best Practices:**
-        - Never commit credentials to version control
-        - Use Cloudflare Secrets or environment variables in production
-        - Credentials entered here are masked but stored in session state
-        - Clear browser cache after deployment to remove sensitive data
-        """)
-
         account_sid = st.text_input(
             "Twilio Account SID",
             value=st.session_state.get('twilio_sid', ''),
             type="password",
             placeholder="ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
-            help="Your Twilio Account SID (starts with 'AC'). This will be masked for security.",
+            help=HELP_TEXT['twilio_sid'],
             key='twilio_sid_input'
         )
 
@@ -117,8 +103,7 @@ def render_twilio_config() -> TwilioConfig:
             "Twilio Auth Token",
             value=st.session_state.get('twilio_token', ''),
             type="password",
-            placeholder="••••••••••••••••••••••••••••••••",
-            help="Your Twilio Auth Token (32 characters). This will be masked for security.",
+            help=HELP_TEXT['twilio_token'],
             key='twilio_token_input'
         )
 
@@ -458,69 +443,18 @@ def render_advanced_features() -> tuple[RateLimitConfig, LoggingConfig, Security
     )
 
 
-def render_form() -> tuple[WorkerConfig, list[str]]:
+def render_form() -> WorkerConfig:
     """
     Render complete configuration form.
 
     Returns:
-        Tuple of (Complete WorkerConfig, list of validation errors)
+        Complete WorkerConfig
     """
-    validation_errors = []
-
-    # Render all sections and collect validation errors
+    # Render all sections
     basic = render_basic_settings()
     twilio = render_twilio_config()
     routing = render_routing_options()
     rate_limit, logging, security, retry, integrations = render_advanced_features()
-
-    # Validate basic settings
-    if basic.worker_name:
-        is_valid, error = validate_worker_name(basic.worker_name)
-        if not is_valid:
-            validation_errors.append(f"Worker Name: {error}")
-
-    if basic.domain:
-        is_valid, error = validate_domain(basic.domain)
-        if not is_valid:
-            validation_errors.append(f"Domain: {error}")
-    else:
-        validation_errors.append("Domain is required")
-
-    # Validate Twilio config
-    if twilio.account_sid:
-        is_valid, error = validate_twilio_sid(twilio.account_sid)
-        if not is_valid:
-            validation_errors.append(f"Twilio SID: {error}")
-    else:
-        validation_errors.append("Twilio Account SID is required")
-
-    if twilio.auth_token:
-        is_valid, error = validate_twilio_token(twilio.auth_token)
-        if not is_valid:
-            validation_errors.append(f"Twilio Token: {error}")
-    else:
-        validation_errors.append("Twilio Auth Token is required")
-
-    if twilio.phone_number:
-        is_valid, error = validate_phone_number(twilio.phone_number)
-        if not is_valid:
-            validation_errors.append(f"Twilio Phone: {error}")
-    else:
-        validation_errors.append("Twilio Phone Number is required")
-
-    # Validate security whitelist if enabled
-    if security.enable_sender_whitelist:
-        if not security.sender_whitelist or len(security.sender_whitelist) == 0:
-            validation_errors.append("Sender whitelist is enabled but no emails configured")
-
-    # Validate integrations
-    if integrations.enable_error_notifications:
-        if not integrations.notification_email:
-            validation_errors.append("Notification email is required when error notifications are enabled")
-        else:
-            is_valid, error = validate_email(integrations.notification_email)
-            if not is_valid:
-                validation_errors.append(f"Notification Email: {error}")
 
     # Build complete config
     config = WorkerConfig(
@@ -534,4 +468,4 @@ def render_form() -> tuple[WorkerConfig, list[str]]:
         integrations=integrations
     )
 
-    return config, validation_errors
+    return config

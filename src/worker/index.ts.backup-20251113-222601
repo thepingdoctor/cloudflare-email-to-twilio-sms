@@ -17,7 +17,7 @@ import { createTwilioService, TwilioError } from '../services/twilio-service';
  * This is the main entry point for Cloudflare Email Routing
  */
 export default {
-  async email(message: ForwardableEmailMessage, env: Env, _ctx: ExecutionContext): Promise<void> {
+  async email(message: ForwardableEmailMessage, env: Env, ctx: ExecutionContext): Promise<void> {
     const startTime = Date.now();
     const logger = createLogger(env);
 
@@ -162,7 +162,7 @@ async function parseEmail(message: ForwardableEmailMessage): Promise<ParsedEmail
     attachments: parsed.attachments?.map(att => ({
       filename: att.filename || 'attachment',
       mimeType: att.mimeType || 'application/octet-stream',
-      size: att.content ? (typeof att.content === 'string' ? att.content.length : att.content.byteLength) : 0,
+      size: att.content?.length || 0,
     })),
   };
 }

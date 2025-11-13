@@ -247,3 +247,103 @@ def validate_sender_whitelist(whitelist_text: str) -> Tuple[bool, Optional[str],
         validated_emails.append(email)
 
     return True, None, validated_emails
+
+
+def validate_cloudflare_api_token(token: str) -> Tuple[bool, Optional[str]]:
+    """
+    Validate Cloudflare API token format.
+
+    Args:
+        token: Cloudflare API token to validate
+
+    Returns:
+        Tuple of (is_valid, error_message)
+    """
+    if not token:
+        return False, "Cloudflare API token is required"
+
+    # Cloudflare API tokens are typically 40 characters
+    if len(token) < 40:
+        return False, "Cloudflare API token must be at least 40 characters"
+
+    # Check for basic format (alphanumeric and some special characters)
+    if not re.match(r'^[A-Za-z0-9_-]+$', token):
+        return False, "Invalid Cloudflare API token format"
+
+    return True, None
+
+
+def sanitize_credential(credential: str) -> str:
+    """
+    Sanitize credential for safe display (show first 4 and last 4 characters).
+
+    Args:
+        credential: Credential to sanitize
+
+    Returns:
+        Sanitized credential string
+    """
+    if not credential or len(credential) < 8:
+        return "****"
+
+    return f"{credential[:4]}...{credential[-4:]}"
+
+
+def validate_api_credentials(twilio_sid: str, twilio_token: str, twilio_phone: str) -> Tuple[bool, list[str]]:
+    """
+    Validate all Twilio API credentials together.
+
+    Args:
+        twilio_sid: Twilio Account SID
+        twilio_token: Twilio Auth Token
+        twilio_phone: Twilio phone number
+
+    Returns:
+        Tuple of (is_valid, list of errors)
+    """
+    errors = []
+
+    # Validate SID
+    is_valid, error = validate_twilio_sid(twilio_sid)
+    if not is_valid:
+        errors.append(f"Twilio SID: {error}")
+
+    # Validate token
+    is_valid, error = validate_twilio_token(twilio_token)
+    if not is_valid:
+        errors.append(f"Twilio Token: {error}")
+
+    # Validate phone
+    is_valid, error = validate_phone_number(twilio_phone)
+    if not is_valid:
+        errors.append(f"Twilio Phone: {error}")
+
+    return len(errors) == 0, errors
+
+
+def sanitize_user_input(input_str: str, max_length: int = 1000) -> str:
+    """
+    Sanitize user input to prevent injection attacks.
+
+    Args:
+        input_str: User input string
+        max_length: Maximum allowed length
+
+    Returns:
+        Sanitized string
+    """
+    if not input_str:
+        return ""
+
+    # Truncate to max length
+    sanitized = input_str[:max_length]
+
+    # Remove potential script tags and other dangerous patterns
+    sanitized = re.sub(r'<script[^>]*>.*?</script>', '', sanitized, flags=re.IGNORECASE | re.DOTALL)
+    sanitized = re.sub(r'javascript:', '', sanitized, flags=re.IGNORECASE)
+    sanitized = re.sub(r'on\w+\s*=', '', sanitized, flags=re.IGNORECASE)
+
+    # Remove null bytes
+    sanitized = sanitized.replace('\x00', '')
+
+    return sanitized.strip()

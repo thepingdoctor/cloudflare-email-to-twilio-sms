@@ -53,10 +53,8 @@ function extractPhoneNumber(emailAddress: string): string | null {
     phoneNumber = '{{ routing.default_country_code }}' + phoneNumber;
   }
 
-  // Validate E.164 format: +[1-9] followed by 10-14 digits
-  // E.164 requires minimum 11 digits total (country code + number)
-  // Example: +14155552671 (11 digits), +442071234567 (12 digits)
-  if (!/^\+[1-9]\d{10,14}$/.test(phoneNumber)) {
+  // Validate E.164 format (simplified)
+  if (!/^\+[1-9]\d{1,14}$/.test(phoneNumber)) {
     return null;
   }
 
