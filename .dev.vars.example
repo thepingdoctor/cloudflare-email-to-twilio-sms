@@ -1,0 +1,22 @@
+# Cloudflare Email-to-Twilio-SMS Worker - Development Secrets
+# DO NOT commit actual values! This is a template file.
+
+# Twilio Configuration
+# Get these from: https://console.twilio.com/
+TWILIO_ACCOUNT_SID=ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+TWILIO_AUTH_TOKEN=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+TWILIO_PHONE_NUMBER=+15551234567
+
+# Sender Authorization (comma-separated)
+# Examples:
+#   - Exact match: user@example.com
+#   - Domain wildcard: *@example.com
+#   - Multiple: user@example.com,*@trusted.com
+ALLOWED_SENDERS=test@example.com,*@yourdomain.com
+
+# Optional: Default country code for phone normalization
+# Default: "1" (USA)
+DEFAULT_COUNTRY_CODE=1
+
+# Optional: Admin email for failed message forwarding (currently commented out in code)
+# ADMIN_EMAIL=admin@yourdomain.com
