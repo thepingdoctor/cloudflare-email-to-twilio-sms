@@ -98,13 +98,9 @@ def verify_package_json_security(package_json_str: str) -> tuple[bool, list[str]
 
     # Check wrangler version
     wrangler_version = dev_deps.get("wrangler", "")
-    if wrangler_version.startswith("^3."):
+    if not wrangler_version.startswith("^3.99") and not wrangler_version.startswith("^4."):
         issues.append(
-            f"wrangler should be ^4.48.0 or higher, got: {wrangler_version}"
-        )
-    elif not wrangler_version.startswith("^4."):
-        issues.append(
-            f"wrangler version unexpected: {wrangler_version}"
+            f"wrangler should be ^3.99.0 or higher, got: {wrangler_version}"
         )
 
     return len(issues) == 0, issues

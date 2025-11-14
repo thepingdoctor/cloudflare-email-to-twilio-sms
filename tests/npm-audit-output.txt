@@ -1,0 +1,167 @@
+=============================================================================
+NPM AUDIT OUTPUT - SECURITY VALIDATION TEST
+=============================================================================
+Date: 2025-11-14T02:15:00Z
+Tester: QA Specialist Agent (Hive Mind)
+Session: swarm-1763086131509-e1h1gbori
+Worker: test-email-to-sms (generated from Python template)
+=============================================================================
+
+STEP 1: GENERATE TEST WORKER
+-----------------------------
+$ python3 tests/generate_test_worker.py test-worker-output
+✓ Generated: src/index.ts
+✓ Generated: wrangler.toml
+✓ Generated: package.json
+✓ Generated: tsconfig.json
+✓ Generated: .env.example
+✓ Generated: .gitignore
+✓ Generated: README.md
+✓ Generated: deploy.sh
+✅ Test worker generated successfully in: test-worker-output
+
+STEP 2: VERIFY PACKAGE.JSON VERSIONS
+-------------------------------------
+Generated package.json devDependencies:
+  "@cloudflare/workers-types": "^4.20241127.0"
+  "@cloudflare/vitest-pool-workers": "^0.10.7"
+  "typescript": "^5.5.2"
+  "vitest": "^2.1.9"          ✅ CORRECT (security fix applied)
+  "wrangler": "^3.99.0"       ❌ WRONG (should be ^4.48.0)
+  (missing) "vite"            ❌ MISSING (should be ^6.1.7)
+  (missing) "esbuild"         ❌ MISSING (should be ^0.24.3)
+
+STEP 3: INSTALL DEPENDENCIES
+-----------------------------
+$ cd test-worker-output && npm install
+
+npm warn deprecated rollup-plugin-inject@3.0.2
+npm warn deprecated sourcemap-codec@1.4.8
+
+added 192 packages, and audited 193 packages in 18s
+
+42 packages are looking for funding
+  run `npm fund` for details
+
+6 moderate severity vulnerabilities
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+
+STEP 4: NPM AUDIT - FULL OUTPUT
+--------------------------------
+$ npm audit
+
+# npm audit report
+
+esbuild  <=0.24.2
+Severity: moderate
+esbuild enables any website to send any requests to the development
+server and read the response
+CVE: https://github.com/advisories/GHSA-67mh-4wv8-2f99
+fix available via `npm audit fix --force`
+Will install wrangler@4.48.0, which is a breaking change
+node_modules/esbuild
+node_modules/wrangler/node_modules/esbuild
+  vite  0.11.0 - 6.1.6
+  Depends on vulnerable versions of esbuild
+  node_modules/vite
+    @vitest/mocker  <=3.0.0-beta.4
+    Depends on vulnerable versions of vite
+    node_modules/@vitest/mocker
+      vitest  0.0.1 - 0.0.12 || 0.0.29 - 0.0.122 || 0.3.3 - 3.0.0-beta.4
+      Depends on vulnerable versions of @vitest/mocker
+      Depends on vulnerable versions of vite
+      Depends on vulnerable versions of vite-node
+      node_modules/vitest
+    vite-node  <=2.2.0-beta.2
+    Depends on vulnerable versions of vite
+    node_modules/vite-node
+  wrangler  <=4.10.0
+  Depends on vulnerable versions of esbuild
+  node_modules/wrangler
+
+6 moderate severity vulnerabilities
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+STEP 5: DEPENDENCY TREE ANALYSIS
+---------------------------------
+$ npm ls esbuild vite wrangler
+
+test-email-to-sms@1.0.0
+├─┬ @cloudflare/vitest-pool-workers@0.10.7
+│ └─┬ wrangler@4.48.0                    ✅ SAFE (transitive dependency)
+│   └── esbuild@0.25.4                   ✅ SAFE
+├─┬ vitest@2.1.9                         ✅ SAFE
+│ ├─┬ @vitest/mocker@2.1.9
+│ │ └── vite@5.4.21 deduped             ❌ VULNERABLE (needs >=6.1.7)
+│ ├─┬ vite-node@2.1.9
+│ │ └── vite@5.4.21 deduped             ❌ VULNERABLE
+│ └─┬ vite@5.4.21                        ❌ VULNERABLE
+│   └── esbuild@0.21.5                   ❌ VULNERABLE (needs >=0.24.3)
+└─┬ wrangler@3.114.15                    ❌ VULNERABLE (template specifies 3.99.0)
+  ├─┬ @esbuild-plugins/node-globals-polyfill@0.2.3
+  │ └── esbuild@0.21.5 deduped          ❌ VULNERABLE
+  ├─┬ @esbuild-plugins/node-modules-polyfill@0.2.2
+  │ └── esbuild@0.21.5 deduped          ❌ VULNERABLE
+  └── esbuild@0.17.19                    ❌ VULNERABLE (ancient version)
+
+=============================================================================
+VALIDATION RESULT: ❌ FAILED
+=============================================================================
+
+EXPECTED: found 0 vulnerabilities
+ACTUAL:   found 6 moderate severity vulnerabilities
+
+ROOT CAUSE:
+1. Template specifies wrangler@^3.99.0 instead of ^4.48.0
+   → Installs wrangler 3.114.15 with esbuild 0.17.19 (vulnerable)
+
+2. Missing explicit vite@^6.1.7 override
+   → vitest brings in vite@5.4.21 with esbuild 0.21.5 (vulnerable)
+
+3. Missing explicit esbuild@^0.24.3 for defense-in-depth
+   → Multiple vulnerable esbuild versions in dependency tree
+
+REQUIRED TEMPLATE FIXES:
+- streamlit-app/templates/config/package.json.j2
+- streamlit-app/templates/email-worker/package.json.j2
+
+CHANGES NEEDED:
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20241127.0",
+    "@cloudflare/vitest-pool-workers": "^0.10.7",
++   "esbuild": "^0.24.3",           // ADD
+    "typescript": "^5.5.2",
++   "vite": "^6.1.7",               // ADD
+    "vitest": "^2.1.9",
+-   "wrangler": "^3.99.0"           // REMOVE
++   "wrangler": "^4.48.0"           // ADD
+  }
+
+IMPACT:
+- Security: HIGH (vulnerable during local development)
+- Business: MEDIUM (blocks security-conscious deployments)
+- Development: LOW (simple version string updates)
+
+NEXT STEPS:
+1. Coder agent applies template fixes (3 changes + 2 additions)
+2. Tester regenerates worker and validates (target: 0 vulnerabilities)
+3. Regression testing with 3 different configurations
+4. Sign-off for production use
+
+=============================================================================
+COORDINATION:
+- Report: tests/SECURITY_VALIDATION_REPORT.md
+- Memory: swarm/coder/action-required (stored in ReasoningBank)
+- Notification: Sent via hooks to swarm
+- Status: Awaiting coder template updates
+=============================================================================
+
+Generated by: QA Specialist Agent
+Protocol: SPARC TDD Security Validation
+Swarm: Hive Mind Collective Intelligence

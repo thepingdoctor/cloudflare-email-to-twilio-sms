@@ -106,14 +106,14 @@ VALIDATION_PATTERNS = {
 NPM_DEPENDENCIES = {
     "hono": "^4.6.8",
     "twilio": "^5.3.5",
-    "@cloudflare/workers-types": "^4.20241022.0"
+    "@cloudflare/workers-types": "^4.20241127.0"
 }
 
 NPM_DEV_DEPENDENCIES = {
     "typescript": "^5.5.2",
-    "wrangler": "^3.84.1",
+    "wrangler": "^3.99.0",
     "@cloudflare/vitest-pool-workers": "^0.5.2",
-    "vitest": "2.0.5"
+    "vitest": "^2.1.9"
 }
 
 # Cloudflare compatibility
