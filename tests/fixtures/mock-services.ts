@@ -195,7 +195,7 @@ export function createMockEnv(overrides: Partial<Env> = {}): Env {
   const mockWorkflow = new MockWorkflowBinding();
 
   return {
-    TWILIO_ACCOUNT_SID: 'AC1234567890abcdef1234567890abcd',
+    TWILIO_ACCOUNT_SID: 'AC1234567890abcdef1234567890abcdef',
     TWILIO_AUTH_TOKEN: '1234567890abcdef1234567890abcdef',
     TWILIO_PHONE_NUMBER: '+15559999999',
     NEVER_GONNA: mockWorkflow,
@@ -250,7 +250,7 @@ export function createMockWebhookPayload(overrides: Record<string, string> = {})
     To: '+15559876543',
     Body: 'Test message',
     MessageSid: `SM${Math.random().toString(36).substr(2, 32)}`,
-    AccountSid: 'AC1234567890abcdef1234567890abcd',
+    AccountSid: 'AC1234567890abcdef1234567890abcdef',
     NumMedia: '0',
     FromCity: 'SAN FRANCISCO',
     FromState: 'CA',

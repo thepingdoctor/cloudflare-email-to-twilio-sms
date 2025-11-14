@@ -9,16 +9,18 @@ import type { ForwardableEmailMessage } from '../../src/types';
 import testData from '../fixtures/test-data.json';
 
 // Mock PostalMime
+let postalMimeMock = {
+  subject: 'Test Subject',
+  text: 'Test message body',
+  html: '<p>Test HTML</p>',
+  headers: {},
+  attachments: [],
+};
+
 vi.mock('postal-mime', () => ({
   default: class PostalMime {
     async parse() {
-      return {
-        subject: 'Test Subject',
-        text: 'Test message body',
-        html: '<p>Test HTML</p>',
-        headers: {},
-        attachments: [],
-      };
+      return postalMimeMock;
     }
   },
 }));
@@ -61,7 +63,7 @@ describe('Integration Tests', () => {
       forward: vi.fn(),
       ...overrides,
     } as any;
-  });
+  };
 
   describe('End-to-End Email-to-SMS Flow', () => {
     it('should complete full workflow successfully', async () => {
@@ -195,10 +197,10 @@ describe('Integration Tests', () => {
   describe('Rate Limiting Integration', () => {
     it('should enforce rate limits when configured', async () => {
       const mockKV = {
-        get: vi.fn().mockResolvedValue(JSON.stringify({
+        get: vi.fn().mockResolvedValue({
           count: 10,
           resetAt: Date.now() + 3600000,
-        })),
+        }),
         put: vi.fn(),
         delete: vi.fn(),
       };
@@ -220,10 +222,10 @@ describe('Integration Tests', () => {
 
     it('should allow requests within rate limit', async () => {
       const mockKV = {
-        get: vi.fn().mockResolvedValue(JSON.stringify({
+        get: vi.fn().mockResolvedValue({
           count: 5,
           resetAt: Date.now() + 3600000,
-        })),
+        }),
         put: vi.fn(),
         delete: vi.fn(),
       };
@@ -293,7 +295,7 @@ describe('Integration Tests', () => {
     it('should handle valid Twilio webhook payload', async () => {
       const payload = testData.twilio_webhooks.valid_sms;
       const message = createMockEmail({
-        from: payload.From,
+        from: 'webhook@twilio.com',
         to: `${payload.From.replace('+', '')}@example.com`,
       });
 
@@ -315,8 +317,19 @@ describe('Integration Tests', () => {
 
     it('should handle international phone numbers', async () => {
       const payload = testData.twilio_webhooks.international_uk;
+
+      // Set mock to include phone in subject since email format only supports US 10-digit
+      postalMimeMock = {
+        subject: `To: ${payload.From}`,
+        text: 'Test message body',
+        html: '<p>Test HTML</p>',
+        headers: {},
+        attachments: [],
+      };
+
       const message = createMockEmail({
-        to: `${payload.From.replace('+', '')}@example.com`,
+        from: 'sender@example.com',
+        to: 'international@example.com',
       });
 
       global.fetch = vi.fn().mockResolvedValue({
@@ -328,6 +341,15 @@ describe('Integration Tests', () => {
       await worker.default.email(message, mockEnv, {} as any);
 
       expect(message.setReject).not.toHaveBeenCalled();
+
+      // Reset mock
+      postalMimeMock = {
+        subject: 'Test Subject',
+        text: 'Test message body',
+        html: '<p>Test HTML</p>',
+        headers: {},
+        attachments: [],
+      };
     });
 
     it('should handle emails with emoji and Unicode', async () => {
@@ -379,29 +401,25 @@ describe('Integration Tests', () => {
 
   describe('Edge Cases Integration', () => {
     it('should handle empty email body gracefully', async () => {
-      const message = createMockEmail();
+      // Temporarily modify the mock to return empty content
+      const originalMock = { ...postalMimeMock };
+      postalMimeMock.subject = '';
+      postalMimeMock.text = '';
+      postalMimeMock.html = '';
 
-      // Mock PostalMime to return empty content
-      vi.doMock('postal-mime', () => ({
-        default: class PostalMime {
-          async parse() {
-            return {
-              subject: '',
-              text: '',
-              html: '',
-              headers: {},
-              attachments: [],
-            };
-          }
-        },
-      }));
+      const message = createMockEmail();
 
       const worker = await import('../../src/worker/index');
       await worker.default.email(message, mockEnv, {} as any);
 
       expect(message.setReject).toHaveBeenCalledWith(
-        expect.stringContaining('empty')
+        expect.stringContaining('no content')
       );
+
+      // Restore original mock
+      postalMimeMock.subject = originalMock.subject;
+      postalMimeMock.text = originalMock.text;
+      postalMimeMock.html = originalMock.html;
     });
 
     it('should handle very long email content', async () => {
@@ -416,6 +434,7 @@ describe('Integration Tests', () => {
       await worker.default.email(message, mockEnv, {} as any);
 
       // Should truncate to SMS length
+      expect(global.fetch).toHaveBeenCalled();
       const fetchCall = (global.fetch as any).mock.calls[0];
       const body = fetchCall[1].body;
       const decodedBody = decodeURIComponent(body);
@@ -436,6 +455,7 @@ describe('Integration Tests', () => {
       const worker = await import('../../src/worker/index');
       await worker.default.email(message, mockEnv, {} as any);
 
+      expect(global.fetch).toHaveBeenCalled();
       const fetchCall = (global.fetch as any).mock.calls[0];
       const body = fetchCall[1].body;
 

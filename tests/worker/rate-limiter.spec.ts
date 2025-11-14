@@ -14,8 +14,13 @@ describe('Rate Limiter', () => {
   let mockKV: KVNamespace;
 
   beforeEach(() => {
+    // Create a mock KV that properly handles 'json' type parameter
     mockKV = {
-      get: vi.fn(),
+      get: vi.fn((key: string, type?: string) => {
+        const impl = (mockKV.get as any).getMockImplementation();
+        const result = impl ? impl(key, type) : Promise.resolve(null);
+        return result;
+      }),
       put: vi.fn(),
       delete: vi.fn(),
       list: vi.fn(),
@@ -60,7 +65,8 @@ describe('Rate Limiter', () => {
         resetAt: Date.now() + 3600000, // 1 hour from now
       };
 
-      (mockKV.get as any).mockResolvedValue(JSON.stringify(existingData));
+      // When 'json' type is specified, KV returns parsed object, not string
+      (mockKV.get as any).mockResolvedValue(existingData);
       (mockKV.put as any).mockResolvedValue(undefined);
 
       const result = await rateLimiter.checkSenderLimit('user@example.com');
@@ -77,7 +83,8 @@ describe('Rate Limiter', () => {
         resetAt: Date.now() + 3600000,
       };
 
-      (mockKV.get as any).mockResolvedValue(JSON.stringify(existingData));
+      // When 'json' type is specified, KV returns parsed object, not string
+      (mockKV.get as any).mockResolvedValue(existingData);
 
       const result = await rateLimiter.checkSenderLimit('user@example.com');
 
@@ -95,7 +102,8 @@ describe('Rate Limiter', () => {
         resetAt: Date.now() - 1000, // Expired 1 second ago
       };
 
-      (mockKV.get as any).mockResolvedValue(JSON.stringify(existingData));
+      // When 'json' type is specified, KV returns parsed object, not string
+      (mockKV.get as any).mockResolvedValue(existingData);
       (mockKV.put as any).mockResolvedValue(undefined);
 
       const result = await rateLimiter.checkSenderLimit('user@example.com');
@@ -184,7 +192,8 @@ describe('Rate Limiter', () => {
         resetAt: Date.now() + 3600000,
       };
 
-      (mockKV.get as any).mockResolvedValue(JSON.stringify(existingData));
+      // When 'json' type is specified, KV returns parsed object, not string
+      (mockKV.get as any).mockResolvedValue(existingData);
 
       const result = await rateLimiter.checkRecipientLimit('+15551234567');
 
@@ -213,7 +222,8 @@ describe('Rate Limiter', () => {
         resetAt: Date.now() + 86400000, // 24 hours
       };
 
-      (mockKV.get as any).mockResolvedValue(JSON.stringify(existingData));
+      // When 'json' type is specified, KV returns parsed object, not string
+      (mockKV.get as any).mockResolvedValue(existingData);
 
       const result = await rateLimiter.checkGlobalLimit();
 
@@ -265,7 +275,8 @@ describe('Rate Limiter', () => {
         resetAt: Date.now() + 3600000,
       };
 
-      (mockKV.get as any).mockResolvedValue(JSON.stringify(existingData));
+      // When 'json' type is specified, KV returns parsed object, not string
+      (mockKV.get as any).mockResolvedValue(existingData);
 
       const result = await rateLimiter.getLimitStatus('sender:user@example.com');
 
@@ -301,7 +312,8 @@ describe('Rate Limiter', () => {
         resetAt: Date.now() + 3600000,
       };
 
-      (mockKV.get as any).mockResolvedValue(JSON.stringify(existingData));
+      // When 'json' type is specified, KV returns parsed object, not string
+      (mockKV.get as any).mockResolvedValue(existingData);
 
       const result = await rateLimiter.getLimitStatus('sender:user@example.com');
 
@@ -340,7 +352,8 @@ describe('Rate Limiter', () => {
         resetAt,
       };
 
-      (mockKV.get as any).mockResolvedValue(JSON.stringify(existingData));
+      // When 'json' type is specified, KV returns parsed object, not string
+      (mockKV.get as any).mockResolvedValue(existingData);
       (mockKV.put as any).mockResolvedValue(undefined);
 
       await rateLimiter.checkSenderLimit('user@example.com');
@@ -377,7 +390,8 @@ describe('Rate Limiter', () => {
         if (callCount === 1) {
           return null;
         }
-        return JSON.stringify({ count: 1, resetAt: Date.now() + 3600000 });
+        // When 'json' type is specified, KV returns parsed object, not string
+        return { count: 1, resetAt: Date.now() + 3600000 };
       });
       (mockKV.put as any).mockResolvedValue(undefined);
 
@@ -400,7 +414,8 @@ describe('Rate Limiter', () => {
         resetAt: Date.now() + 86400000 * 365, // 1 year
       };
 
-      (mockKV.get as any).mockResolvedValue(JSON.stringify(existingData));
+      // When 'json' type is specified, KV returns parsed object, not string
+      (mockKV.get as any).mockResolvedValue(existingData);
       (mockKV.put as any).mockResolvedValue(undefined);
 
       const result = await rateLimiter.checkSenderLimit('user@example.com');
@@ -411,7 +426,8 @@ describe('Rate Limiter', () => {
     it('should handle corrupted KV data', async () => {
       const rateLimiter = new RateLimiter(mockEnv, mockLogger);
 
-      (mockKV.get as any).mockResolvedValue('invalid json');
+      // Simulate KV error by making get() throw
+      (mockKV.get as any).mockRejectedValue(new Error('KV parse error'));
 
       const result = await rateLimiter.checkSenderLimit('user@example.com');
 
@@ -427,7 +443,8 @@ describe('Rate Limiter', () => {
         resetAt: Date.now() + 3600000,
       };
 
-      (mockKV.get as any).mockResolvedValue(JSON.stringify(existingData));
+      // When 'json' type is specified, KV returns parsed object, not string
+      (mockKV.get as any).mockResolvedValue(existingData);
       (mockKV.put as any).mockResolvedValue(undefined);
 
       const result = await rateLimiter.checkSenderLimit('user@example.com');

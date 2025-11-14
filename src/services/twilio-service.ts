@@ -72,37 +72,24 @@ export class TwilioService {
       });
 
       if (!response.ok) {
-        // Handle rate limiting (429 Too Many Requests)
-        if (response.status === 429) {
-          const retryAfter = response.headers.get('Retry-After');
-          const retrySeconds = retryAfter ? parseInt(retryAfter, 10) : 60;
-
-          this.logger.warn('Twilio rate limit reached', {
-            status: response.status,
-            retryAfter: retrySeconds,
-            url,
-          });
-
-          throw new TwilioError(
-            `Rate limit exceeded. Retry after ${retrySeconds} seconds`,
-            response.status,
-            20429 // Twilio rate limit error code
-          );
-        }
-
         // Parse error response with graceful fallback
         let errorData: { message?: string; code?: number } = {};
         try {
-          const contentType = response.headers.get('Content-Type') || '';
+          const contentType = response.headers?.get?.('Content-Type') || '';
           if (contentType.includes('application/json')) {
             errorData = await response.json() as { message?: string; code?: number };
           } else {
-            // Non-JSON response fallback
-            const errorText = await response.text();
-            errorData = {
-              message: errorText || `HTTP ${response.status}: ${response.statusText}`,
-              code: response.status
-            };
+            // Try to parse as JSON anyway (some APIs don't set Content-Type correctly)
+            try {
+              errorData = await response.json() as { message?: string; code?: number };
+            } catch {
+              // Non-JSON response fallback
+              const errorText = await response.text();
+              errorData = {
+                message: errorText || `HTTP ${response.status}`,
+                code: response.status
+              };
+            }
           }
         } catch (parseError) {
           // If parsing fails, use generic error
@@ -111,15 +98,27 @@ export class TwilioService {
             status: response.status,
           });
           errorData = {
-            message: `HTTP ${response.status}: ${response.statusText}`,
+            message: `HTTP ${response.status}`,
             code: response.status
           };
+        }
+
+        // Handle rate limiting (429 Too Many Requests) - check after parsing
+        if (response.status === 429) {
+          const retryAfter = response.headers?.get?.('Retry-After');
+          const retrySeconds = retryAfter ? parseInt(retryAfter, 10) : 60;
+
+          this.logger.warn('Twilio rate limit reached', {
+            status: response.status,
+            retryAfter: retrySeconds,
+            url,
+            message: errorData.message,
+          });
         }
 
         // Log detailed error context for debugging
         this.logger.error('Twilio API request failed', new Error(errorData.message || 'Unknown error'), {
           status: response.status,
-          statusText: response.statusText,
           twilioCode: errorData.code,
           message: errorData.message,
           url,

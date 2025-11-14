@@ -60,13 +60,6 @@ export function convertHtmlToText(html: string): string {
   let text = html.replace(/<script[^>]*>.*?<\/script>/gi, '');
   text = text.replace(/<style[^>]*>.*?<\/style>/gi, '');
 
-  // Replace common HTML entities
-  text = text.replace(/&nbsp;/g, ' ');
-  text = text.replace(/&quot;/g, '"');
-  text = text.replace(/&amp;/g, '&');
-  text = text.replace(/&lt;/g, '<');
-  text = text.replace(/&gt;/g, '>');
-
   // Convert <br> to newlines
   text = text.replace(/<br\s*\/?>/gi, '\n');
 
@@ -76,10 +69,28 @@ export function convertHtmlToText(html: string): string {
   // Remove all remaining HTML tags
   text = text.replace(/<[^>]+>/g, '');
 
-  // Decode other HTML entities
-  text = decodeHtmlEntities(text);
+  // Decode HTML entities safely (prevent nested/double decoding)
+  text = decodeHtmlEntitiesSafely(text);
 
-  return text.trim();
+  // CRITICAL SECURITY: Strip ALL HTML tags after entity decoding
+  // This prevents nested encoding attacks like &lt;script&gt; becoming <script>
+  text = text.replace(/<[^>]*>/g, '');
+
+  // Remove javascript: protocol (case-insensitive)
+  text = text.replace(/javascript:/gi, '');
+
+  // Remove event handlers (case-insensitive)
+  text = removeEventHandlers(text);
+
+  // Trim only newlines from start/end, preserve meaningful spaces from entities
+  text = text.replace(/^\n+|\n+$/g, '');
+
+  // If result is only whitespace (after newline trim), return empty string
+  if (/^\s*$/.test(text)) {
+    return '';
+  }
+
+  return text;
 }
 
 /**
@@ -184,31 +195,59 @@ export function extractSenderName(email: string): string {
 }
 
 /**
- * Decode HTML entities
+ * Decode HTML entities safely (prevents nested/double decoding attacks)
  */
-function decodeHtmlEntities(text: string): string {
-  const entities: Record<string, string> = {
-    '&#39;': "'",
-    '&apos;': "'",
-    '&lsquo;': "'",
-    '&rsquo;': "'",
-    '&ldquo;': '"',
-    '&rdquo;': '"',
-    '&mdash;': '—',
-    '&ndash;': '–',
-    '&hellip;': '...',
-  };
-
+function decodeHtmlEntitiesSafely(text: string): string {
   let decoded = text;
-  for (const [entity, char] of Object.entries(entities)) {
-    decoded = decoded.replace(new RegExp(entity, 'g'), char);
-  }
+
+  // Decode entities in safe order: specific entities first, &amp; LAST
+  // This prevents double-decoding of entities like &amp;nbsp;
+  decoded = decoded.replace(/&nbsp;/g, ' ');
+  decoded = decoded.replace(/&quot;/g, '"');
+  decoded = decoded.replace(/&lt;/g, '<');
+  decoded = decoded.replace(/&gt;/g, '>');
+  decoded = decoded.replace(/&apos;/g, "'");
+  decoded = decoded.replace(/&lsquo;/g, "'");
+  decoded = decoded.replace(/&rsquo;/g, "'");
+  decoded = decoded.replace(/&ldquo;/g, '"');
+  decoded = decoded.replace(/&rdquo;/g, '"');
+  decoded = decoded.replace(/&mdash;/g, '—');
+  decoded = decoded.replace(/&ndash;/g, '–');
+  decoded = decoded.replace(/&hellip;/g, '...');
+
+  // Decode &amp; LAST to prevent double-decoding
+  decoded = decoded.replace(/&amp;/g, '&');
 
   // Decode numeric entities
   decoded = decoded.replace(/&#(\d+);/g, (_, code) => String.fromCharCode(parseInt(code, 10)));
   decoded = decoded.replace(/&#x([0-9a-f]+);/gi, (_, code) => String.fromCharCode(parseInt(code, 16)));
 
   return decoded;
+}
+
+/**
+ * Remove event handlers from text (case-insensitive)
+ */
+function removeEventHandlers(text: string): string {
+  // List of common event handlers
+  const eventHandlers = [
+    'onclick', 'ondblclick', 'onmousedown', 'onmouseup', 'onmouseover', 'onmousemove', 'onmouseout',
+    'onload', 'onunload', 'onchange', 'onsubmit', 'onreset', 'onselect', 'onblur', 'onfocus',
+    'onkeydown', 'onkeypress', 'onkeyup', 'onerror', 'onabort', 'onbeforeunload', 'onhashchange',
+    'onmessage', 'ononline', 'onoffline', 'onpopstate', 'onresize', 'onstorage', 'oncontextmenu',
+    'oninput', 'oninvalid', 'onsearch', 'ondrag', 'ondragend', 'ondragenter', 'ondragleave',
+    'ondragover', 'ondragstart', 'ondrop', 'onscroll', 'oncopy', 'oncut', 'onpaste'
+  ];
+
+  let sanitized = text;
+
+  // Remove each event handler (case-insensitive)
+  for (const handler of eventHandlers) {
+    const regex = new RegExp(handler, 'gi');
+    sanitized = sanitized.replace(regex, '');
+  }
+
+  return sanitized;
 }
 
 /**
@@ -223,6 +262,14 @@ export function sanitizeContent(text: string): string {
 
   // Remove special characters that might cause SMS issues
   text = text.replace(/[\x00-\x1F\x7F]/g, ''); // Control characters
+
+  // Trim and return empty string if only whitespace
+  text = text.trim();
+
+  // Check if result is only whitespace characters (spaces, tabs, etc.)
+  if (/^\s*$/.test(text)) {
+    return '';
+  }
 
   return text;
 }
@@ -241,13 +288,18 @@ export function containsUnicode(text: string): boolean {
  */
 export function calculateSMSSegments(text: string): number {
   const isUnicode = containsUnicode(text);
+
+  // For SMS, we count actual Unicode characters (code points), not string length
+  // Emojis and some special chars are surrogate pairs in JS but count as 1 char in SMS
+  const charCount = isUnicode ? Array.from(text).length : text.length;
+
   const limit = isUnicode ? SMS_LIMITS.UNICODE : SMS_LIMITS.STANDARD;
 
-  if (text.length <= limit) {
+  if (charCount <= limit) {
     return 1;
   }
 
   // Multi-part SMS has slightly different limits
   const multiPartLimit = isUnicode ? 67 : 153;
-  return Math.ceil(text.length / multiPartLimit);
+  return Math.ceil(charCount / multiPartLimit);
 }

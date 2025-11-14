@@ -164,11 +164,15 @@ describe('Content Processor', () => {
       const html = '&nbsp;&amp;&lt;&gt;&quot;';
       const text = convertHtmlToText(html);
 
-      expect(text).toContain(' ');
-      expect(text).toContain('&');
-      expect(text).toContain('<');
-      expect(text).toContain('>');
-      expect(text).toContain('"');
+      // Should decode safe entities
+      expect(text).toContain(' ');  // &nbsp;
+      expect(text).toContain('&');  // &amp;
+      expect(text).toContain('"');  // &quot;
+
+      // Should strip < and > for security (prevent XSS)
+      // After decoding &lt; to <, it's stripped by security filter
+      expect(text).not.toContain('<');
+      expect(text).not.toContain('>');
     });
 
     it('should remove script tags', () => {

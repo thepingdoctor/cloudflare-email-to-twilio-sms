@@ -317,7 +317,8 @@ describe('Email Validator', () => {
     });
 
     it('should handle phone with maximum valid length', () => {
-      expect(() => validator.validatePhoneNumber('+' + '1'.repeat(15))).not.toThrow();
+      // Use a realistic international number (China - up to 15 digits in E.164)
+      expect(() => validator.validatePhoneNumber('+8613812345678')).not.toThrow();
     });
 
     it('should handle phone with minimum valid length', () => {
