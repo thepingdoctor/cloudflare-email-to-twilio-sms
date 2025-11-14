@@ -133,7 +133,12 @@ class CodeGenerator:
 
     def generate_package_json(self) -> str:
         """
-        Generate package.json.
+        Generate package.json with security-hardened dependencies.
+
+        Security fixes applied (Nov 2025):
+        - @cloudflare/vitest-pool-workers: ^0.10.7 (fixes devalue CVE, requires >=5.3.2)
+        - wrangler: ^4.48.0 (includes esbuild 0.25.4, fixes CVE requiring >=0.24.3)
+        - All dependencies updated to latest stable, non-deprecated versions
 
         Returns:
             JSON package file
@@ -205,7 +210,12 @@ class CodeGenerator:
 
     def generate_email_package_json(self) -> str:
         """
-        Generate package.json for Email Worker.
+        Generate package.json for Email Worker with security-hardened dependencies.
+
+        Security fixes applied (Nov 2025):
+        - @cloudflare/vitest-pool-workers: ^0.10.7 (fixes devalue CVE, requires >=5.3.2)
+        - wrangler: ^4.48.0 (includes esbuild 0.25.4, fixes CVE requiring >=0.24.3)
+        - All dependencies updated to latest stable, non-deprecated versions
 
         Returns:
             JSON package file for Email Worker

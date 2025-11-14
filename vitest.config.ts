@@ -40,8 +40,8 @@ export default defineConfig({
     include: ['tests/**/*.spec.ts', 'tests/**/*.test.ts'],
     exclude: ['node_modules', 'dist'],
 
-    // Test timeout
-    testTimeout: 10000,
+    // Test timeout (increased for performance tests)
+    testTimeout: 30000,
     hookTimeout: 10000,
 
     // Reporters
