@@ -1,0 +1,259 @@
+# ============================================
+# NODE.JS & NPM
+# ============================================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+package-lock.json
+pnpm-lock.yaml
+.pnpm-store/
+.npm
+.yarn/
+.eslintcache
+
+# ============================================
+# TYPESCRIPT & BUILD
+# ============================================
+*.tsbuildinfo
+dist/
+build/
+*.js.map
+*.d.ts.map
+
+# ============================================
+# ENVIRONMENT & SECRETS
+# ============================================
+.env
+.env.local
+.env.*.local
+.dev.vars
+*.env
+!.env.example
+!*.env.example
+.envrc
+
+# Secret files (explicit patterns)
+secrets.json
+credentials.json
+*.key
+*.pem
+*.crt
+*.p12
+*.pfx
+
+# ============================================
+# LOGS & PROCESS FILES
+# ============================================
+logs/
+*.log
+pids/
+*.pid
+*.seed
+*.pid.lock
+lib-cov
+
+# ============================================
+# TESTING & COVERAGE
+# ============================================
+coverage/
+.nyc_output/
+*.lcov
+.coverage
+.coverage.*
+htmlcov/
+.pytest_cache/
+.tox/
+.hypothesis/
+.cache/
+
+# ============================================
+# IDE & EDITORS
+# ============================================
+# VSCode
+.vscode/
+.vscode-test/
+*.code-workspace
+
+# JetBrains (IntelliJ, PyCharm, WebStorm)
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Vim
+*.swp
+*.swo
+*~
+.*.swp
+.*.swo
+
+# Emacs
+*~
+\#*\#
+.\#*
+
+# ============================================
+# PYTHON
+# ============================================
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+*.pyo
+*.pyd
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
+.virtualenv
+env.bak/
+venv.bak/
+
+# Python package management
+pip-log.txt
+pip-delete-this-directory.txt
+poetry.toml
+Pipfile.lock
+
+# Python caching & linting
+.mypy_cache/
+.ruff_cache/
+.dmypy.json
+dmypy.json
+.pytype/
+pylint.d/
+
+# Poetry lock file - TRACKED for reproducible deployments
+# Uncomment to ignore if this becomes a library:
+# streamlit-app/poetry.lock
+
+# ============================================
+# STREAMLIT
+# ============================================
+.streamlit/secrets.toml
+.streamlit/cache/
+
+# ============================================
+# CLOUDFLARE WORKERS
+# ============================================
+.wrangler/
+worker-configuration.d.ts
+.dev.vars
+
+# ============================================
+# AI DEVELOPMENT TOOLS
+# ============================================
+# Claude Code
+.claude/
+.claude-flow/
+
+# AI Swarm Coordination
+.swarm/
+.hive-mind/
+memory/
+coordination/
+
+# AI-generated temporary files (root level only)
+/PROJECT_COMPLETE.md
+/HIVE_MIND_SUMMARY.md
+/HIVE_MIND_*.md
+/*_FINAL_REPORT.md
+claude-flow
+hive-mind-prompt-*.txt
+.mcp.json
+claude-flow.config.json
+
+# ============================================
+# DATABASES
+# ============================================
+*.db
+*.db-journal
+*.db-wal
+*.sqlite
+*.sqlite3
+*.sqlite-journal
+*.sqlite-wal
+
+# ============================================
+# BACKUP & TEMPORARY FILES
+# ============================================
+*.backup
+*.backup-*
+*.bak
+*.tmp
+*.temp
+*~
+
+# ============================================
+# OS-SPECIFIC
+# ============================================
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+*.stackdump
+
+# Linux
+*~
+.directory
+.Trash-*
+.nfs*
+
+# ============================================
+# PROJECT-SPECIFIC
+# ============================================
+# Keep generated test worker for integration testing
+!tests/generated-worker-test/
+
+# Add any additional project-specific patterns below
