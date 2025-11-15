@@ -36,30 +36,7 @@ A comprehensive email-to-SMS conversion system with two components:
 
 ## 🚀 Quick Start
 
-### Option 1: Use Pre-Built Worker (Fastest)
-
-```bash
-# 1. Clone repository
-git clone <repository-url>
-cd cloudflare-email-to-twilio-sms
-
-# 2. Install dependencies
-npm install
-
-# 3. Configure development secrets
-cp .dev.vars.example .dev.vars
-# Edit .dev.vars with your Twilio credentials
-
-# 4. Test locally
-npm run dev
-
-# 5. Deploy to production
-npm run deploy:production
-
-# 6. Configure Email Routing in Cloudflare Dashboard
-```
-
-### Option 2: Generate Custom Email Worker (Most Flexible - NEW!)
+### Option 1: Generate Custom Email Worker (Most Flexible - NEW!)
 
 The Streamlit app now supports **Email Worker generation** with complete Cloudflare Email Routing support!
 
@@ -95,6 +72,29 @@ poetry run streamlit run app.py
 # 4. Generate and download Email Worker code (8 files, 1,059 lines)
 # 5. Follow automated deployment instructions
 ```
+### Option 2: Use Pre-Built Worker (Fastest; not reccommended)
+
+```bash
+# 1. Clone repository
+git clone <repository-url>
+cd cloudflare-email-to-twilio-sms
+
+# 2. Install dependencies
+npm install
+
+# 3. Configure development secrets
+cp .dev.vars.example .dev.vars
+# Edit .dev.vars with your Twilio credentials
+
+# 4. Test locally
+npm run dev
+
+# 5. Deploy to production
+npm run deploy:production
+
+# 6. Configure Email Routing in Cloudflare Dashboard
+```
+
 
 ### ⚠️ CRITICAL: Email Routing Production-Only Limitation
 
@@ -530,7 +530,7 @@ npm run tail
 ### Security Testing
 - **43 Security Tests**: 100% passing
 - **Attack Vectors Tested**: XSS, SQL injection, XML injection, path traversal, template injection, command injection, ReDoS, CRLF injection
-- **Zero Vulnerabilities**: All npm security issues resolved (as of 2024-11-13)
+- **Zero Vulnerabilities**: All npm security issues resolved (as of 2025-11-13)
 
 ### Compliance Considerations
 - **Data Retention**: 30-day audit logs (configurable)
@@ -797,7 +797,7 @@ Built with:
 - **Email Worker Templates**: 8 files (index.ts, utils.ts, types.ts, wrangler.toml, package.json, .env.example, README.md, deploy.sh)
 - **License**: MIT
 
-### Recent Additions (2024-11-13)
+### Recent Additions (2025-11-13)
 
 ✅ **Email Worker Generation**: Complete support for Cloudflare Email Routing
 ✅ **Python 3.12 Compatibility**: Updated streamlit (^1.32.0) and numpy (>=1.26.0)
@@ -809,5 +809,5 @@ Built with:
 
 **Made with ❤️ for developers who need reliable email-to-SMS conversion**
 
-**Last Updated:** 2024-11-13
+**Last Updated:** 2025-11-15
 **Version:** 1.0.0
