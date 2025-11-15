@@ -9,7 +9,8 @@ from components import (
     show_file_stats,
     render_download_section,
     render_deployment_instructions,
-    render_export_options
+    render_export_options,
+    render_import_section
 )
 from generators import CodeGenerator
 from utils import APP_TITLE, APP_SUBTITLE, APP_VERSION
@@ -147,6 +148,11 @@ def main():
 
     # Main content area
     st.markdown("## ⚙️ Configuration")
+
+    # Import Configuration Section - Available from the start
+    render_import_section()
+    
+    st.markdown("---")
 
     # Display critical Email Routing production warning
     st.markdown("""

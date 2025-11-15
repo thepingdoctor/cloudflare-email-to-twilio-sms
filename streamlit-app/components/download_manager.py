@@ -2,8 +2,9 @@
 import streamlit as st
 import zipfile
 import io
-from typing import Dict
+from typing import Dict, Optional
 from datetime import datetime
+import json
 
 
 def create_zip_archive(files: Dict[str, str], worker_name: str) -> bytes:
@@ -385,6 +386,129 @@ def render_copy_buttons(files: Dict[str, str]):
             )
 
 
+def render_import_section():
+    """
+    Render configuration import section (available at app start).
+    This allows users to import a previously saved configuration.
+    """
+    st.markdown("### 📤 Import Configuration")
+    
+    st.info("💡 Load a previously saved configuration to quickly populate all settings.")
+    
+    uploaded_file = st.file_uploader(
+        "Upload Configuration JSON",
+        type=['json'],
+        help="Load a previously exported configuration file",
+        key="config_import_uploader"
+    )
+
+    if uploaded_file:
+        try:
+            loaded_config = json.load(uploaded_file)
+            
+            # Validate config structure
+            if not isinstance(loaded_config, dict):
+                st.error("❌ Invalid configuration file format")
+                return
+            
+            st.success(f"✅ Configuration file loaded: **{uploaded_file.name}**")
+            
+            # Show preview of what will be imported
+            with st.expander("📋 Preview Configuration"):
+                st.json(loaded_config)
+            
+            col1, col2 = st.columns([1, 3])
+            
+            with col1:
+                if st.button("🚀 Apply Configuration", type="primary", use_container_width=True):
+                    apply_imported_config(loaded_config)
+                    st.success("✅ Configuration applied successfully!")
+                    st.balloons()
+                    st.rerun()
+            
+            with col2:
+                st.caption("This will populate all form fields with the imported values")
+                
+        except json.JSONDecodeError as e:
+            st.error(f"❌ Invalid JSON file: {str(e)}")
+        except Exception as e:
+            st.error(f"❌ Error loading configuration: {str(e)}")
+            st.exception(e)
+
+
+def apply_imported_config(config_dict: dict):
+    """
+    Apply imported configuration to session state.
+    Maps nested config structure to flat session state keys used by form components.
+    
+    Args:
+        config_dict: Dictionary representation of WorkerConfig
+    """
+    # Map basic settings
+    if 'basic' in config_dict:
+        basic = config_dict['basic']
+        st.session_state['worker_name'] = basic.get('worker_name', 'email-to-sms-worker')
+        st.session_state['domain'] = basic.get('domain', '')
+        st.session_state['email_pattern'] = basic.get('email_pattern', '*@sms.{domain}')
+    
+    # Map Twilio settings
+    if 'twilio' in config_dict:
+        twilio = config_dict['twilio']
+        st.session_state['twilio_sid'] = twilio.get('account_sid', '')
+        st.session_state['twilio_token'] = twilio.get('auth_token', '')
+        st.session_state['twilio_phone'] = twilio.get('phone_number', '')
+    
+    # Map routing settings
+    if 'routing' in config_dict:
+        routing = config_dict['routing']
+        st.session_state['phone_extraction'] = routing.get('phone_extraction_method', 'email_prefix')
+        st.session_state['country_code'] = routing.get('default_country_code', '+1')
+        st.session_state['content_source'] = routing.get('content_source', 'body_text')
+        st.session_state['max_length'] = routing.get('max_message_length', 160)
+        st.session_state['strip_html'] = routing.get('strip_html', True)
+        st.session_state['include_sender'] = routing.get('include_sender_info', False)
+    
+    # Map rate limit settings
+    if 'rate_limit' in config_dict:
+        rate_limit = config_dict['rate_limit']
+        st.session_state['rate_limit_enabled'] = rate_limit.get('enabled', True)
+        st.session_state['rate_sender'] = rate_limit.get('per_sender', 10)
+        st.session_state['rate_recipient'] = rate_limit.get('per_recipient', 20)
+        st.session_state['rate_storage'] = rate_limit.get('storage', 'kv')
+    
+    # Map logging settings
+    if 'logging' in config_dict:
+        logging = config_dict['logging']
+        st.session_state['logging_enabled'] = logging.get('enabled', True)
+        st.session_state['log_storage'] = logging.get('storage_type', 'analytics_engine')
+        st.session_state['log_level'] = logging.get('log_level', 'info')
+        st.session_state['log_sensitive'] = logging.get('log_sensitive_data', False)
+    
+    # Map security settings
+    if 'security' in config_dict:
+        security = config_dict['security']
+        st.session_state['whitelist_enabled'] = security.get('enable_sender_whitelist', False)
+        # Convert list to newline-separated string for text area
+        whitelist = security.get('sender_whitelist', [])
+        st.session_state['whitelist'] = '\n'.join(whitelist) if whitelist else ''
+        st.session_state['content_filter'] = security.get('enable_content_filtering', False)
+    
+    # Map retry settings
+    if 'retry' in config_dict:
+        retry = config_dict['retry']
+        st.session_state['retries_enabled'] = retry.get('enabled', True)
+        st.session_state['max_retries'] = retry.get('max_retries', 3)
+        st.session_state['retry_delay'] = retry.get('retry_delay', 5)
+        st.session_state['backoff'] = retry.get('backoff_strategy', 'exponential')
+    
+    # Map integration settings
+    if 'integrations' in config_dict:
+        integrations = config_dict['integrations']
+        st.session_state['url_shorten'] = integrations.get('enable_url_shortening', False)
+        st.session_state['error_notify'] = integrations.get('enable_error_notifications', False)
+        st.session_state['notify_email'] = integrations.get('notification_email', '')
+
+
 def render_export_options(config):
     """
     Render configuration export options.
@@ -399,44 +523,19 @@ def render_export_options(config):
     with col1:
         # Export as JSON
         config_json = config.to_dict()
-        import json
         json_str = json.dumps(config_json, indent=2)
 
         st.download_button(
-            label="📥 Export as JSON",
+            label="📥 Export Configuration as JSON",
             data=json_str,
             file_name=f"{config.basic.worker_name}-config.json",
             mime="application/json",
-            help="Save configuration for later reuse",
+            help="Save configuration for later reuse - can be imported on next use",
             use_container_width=True
         )
 
     with col2:
-        # Load from JSON
-        uploaded_file = st.file_uploader(
-            "📤 Import Configuration",
-            type=['json'],
-            help="Load previously saved configuration",
-            key="config_upload"
-        )
-
-        if uploaded_file:
-            try:
-                import json
-                loaded_config = json.load(uploaded_file)
-                st.success("✅ Configuration loaded! Click 'Apply' to use it.")
-
-                if st.button("Apply Configuration"):
-                    # Update session state with loaded config
-                    for key, value in loaded_config.items():
-                        if isinstance(value, dict):
-                            for sub_key, sub_value in value.items():
-                                st.session_state[sub_key] = sub_value
-                        else:
-                            st.session_state[key] = value
-                    st.rerun()
-            except Exception as e:
-                st.error(f"❌ Error loading configuration: {str(e)}")
+        st.info("💡 **Tip:** Export your configuration to reuse it later with the Import feature at the top of the page.")
 
 
 def show_download_success():
